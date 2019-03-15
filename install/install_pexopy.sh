@@ -13,11 +13,10 @@ Rscript install_dependencies.R
 
 ### download PEXO
 pexodir=$HOME/.pexo # target directory
-cwd=$(pwd)
+mkdir $pexodir
+
+# set the PEXODIR variable, used by PEXOpy
 export PEXODIR=$pexodir
 echo "export PEXODIR=$pexodir" >> $HOME/.bashrc # add an entry to your .bashrc
-
-mkdir $pexodir
 # clone PEXO
 git clone https://github.com/phillippro/pexo.git $pexodir
-

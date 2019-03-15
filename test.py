@@ -2,9 +2,11 @@ from pexopy import Pexo
 
 result = Pexo().run(
     binary_model="DDGR",
-    observatory= "~/soft/pexo_test/code_v3/observatory.par",
-    astrometry=  "~/soft/pexo_test/code_v3/astrometry_AC.par",
-    binary=      "~/soft/pexo_test/code_v3/kepler_AC.par"
+    observatory= "~/soft/pexo_test/code/observatory.par",
+    astrometry=  "~/soft/pexo_test/code/astrometry_AC.par",
+    binary=      "~/soft/pexo_test/code/kepler_AC.par"
 )
 
 print("RESULT : ", result)
+
+# Rscript /home/timberhill/soft/pexo_test/code/binary_test.R DDGR ~/soft/pexo_test/code/observatory.par ~/soft/pexo_test/code/astrometry_AC.par ~/soft/pexo_test/code/kepler_AC.par

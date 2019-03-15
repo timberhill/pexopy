@@ -1,26 +1,25 @@
 import os
 import subprocess
 
-import helpers
+# import helpers
 
 
 class Pexo(object):
     """
     PEXO wrapper class
     """
-    def __init__(self, suppress_output=False):
-        # ensure R dependencies are installed
-        helpers.check_dependencies()
+    def __init__(self):
+        self.R       = subprocess.check_output("which R", shell=True).decode("ascii").strip()
+        self.Rscript = subprocess.check_output("which Rscript", shell=True).decode("ascii").strip()
+        self.pexodir = subprocess.check_output("echo $PEXODIR", shell=True).decode("ascii").strip()
 
-        # test paths
-        # self.pexopath = "/home/timberhill/soft/pexo_test/code/"
-        self.pexo_main = "/home/timberhill/soft/pexo_test/code_v3/binary_test.R"
+        self.pexo_main = "{}/{}".format(self.pexodir, "code/binary_test.R").replace("//", "/")
 
-        # get R path used in rpy2
-        self.Rscript = "{}/{}".format(os.environ["R_HOME"], "bin/Rscript")
+        self.cwd = os.getcwd() # current directory
+        
 
-        self.suppress_output = suppress_output
-        self.original_directory = os.getcwd()  # if needed?
+    def _get_last_output(self):
+        raise NotImplementedError("Pexo._get_last_output() is not yet implemented.")
 
 
     def run(self, binary_model="DDGR", observatory=None, astrometry=None, binary=None):
@@ -29,11 +28,16 @@ class Pexo(object):
         """
         self._validate_parameters(binary_model, observatory, astrometry, binary)
 
+        # go to pexo directory
+        os.chdir(os.path.join(self.pexodir, "code"))
+
         # see if you need output
-        if self.suppress_output:
-            stderr = None
-        else:
-            stderr = open('/dev/null', 'w')
+        # if self.suppress_output:
+        #     stderr = None
+        # else:
+        #     stderr = open('/dev/null', 'w')
+        stderr = open('/dev/null', 'w')
+        stdout = subprocess.STDOUT
 
         # TODO : handle file/string/dictionary types
         # assume args are strings
@@ -43,7 +47,10 @@ class Pexo(object):
         print("\n\nEXECUTING\n", " ".join(cmd))
 
         # RUN PEXO
-        result = subprocess.check_output(cmd, universal_newlines=True, stderr=stderr)
+        result = subprocess.check_output(cmd, universal_newlines=True)
+
+        # go back to the original directory
+        os.chdir(self.cwd)
 
         # TODO : get the output files, turn them into objects?
         return result
