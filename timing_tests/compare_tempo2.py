@@ -10,7 +10,7 @@ def generate_tim(jds, split=10000000000):
     i = 0
     jds_split = jds[ 0 : split ]
     while len(jds_split) > 0:
-        filename = "tc.tim"
+        filename = "tempo2_inputs/tc.tim"
         if i != 0:
             filename += str(i)
         
@@ -44,13 +44,15 @@ ms_per_day = seconds_per_day * 1000
 
 
 pexo_output = np.genfromtxt(
-    "/home/timberhill/repositories/pexo/results/TC_timing_DDGR_dt10day_Ntime400.csv",
+    "/home/timberhill/repositories/pexo/results/ddt_TC_timing_DDGR_dt10day_Ntime400.csv",
     delimiter="\t",
     skip_header=1
 ).T
 
-JDUTC = pexo_output[0] + pexo_output[1]
-BJDTDB_pexo = pexo_output[2] + pexo_output[3]
+JDUTC_pexo  = np.array([pexo_output[0], pexo_output[1]])
+MJDUTC = [x[0]-2400000.5 + x[1] for x in JDUTC_pexo.T]
+BJDTDB_pexo = np.array([pexo_output[2], pexo_output[3]])
+BJDTDB_correction_pexo = pexo_output[3] - pexo_output[1]
 
 
 # take first 10000 points
@@ -61,44 +63,45 @@ BJDTDB_pexo = pexo_output[2] + pexo_output[3]
 
 
 # generate .tim file for tempo2
-# generate_tim(JDUTC-2400000.5, split=10001)
-
+# JDUTC_pexo_str = ["{:5.20f}".format( x[0] - 2400000.5 + x[1]) for x in JDUTC_pexo.T]
+# generate_tim(JDUTC_pexo_str, split=10001)
+# exit()
 
 tempo2_output = np.genfromtxt(
-    "output100k.dat",
+    "tempo210k.csv",
     delimiter=" ",
-    skip_header=0
+    skip_header=1
 ).T
 
-
-BJDTDB_tempo2 = tempo2_output[1] + 2400000.5
+# MJDUTC = tempo2_output[0]
+BJDTDB_tempo2 = tempo2_output[5]
 
 # PLOT
 f, ax = plt.subplots(2, 1, sharex=True, figsize=(12,9))
 
-ax[0].scatter(JDUTC, seconds_per_day * (BJDTDB_pexo       - JDUTC), marker="o", facecolors="none", edgecolors="k", label="PEXO")
-ax[0].scatter(JDUTC, seconds_per_day * (BJDTDB_tempo2 - JDUTC), marker="+", color="b", label="tempo2")
+ax[0].scatter(MJDUTC, seconds_per_day * (BJDTDB_pexo[1] - JDUTC_pexo[1]), marker="o", facecolors="none", edgecolors="k", label="PEXO")
+ax[0].scatter(MJDUTC, seconds_per_day * (BJDTDB_tempo2  - MJDUTC), marker="+", color="b", label="tempo2")
 ax[0].set_xlabel("JDUTC, days")
 ax[0].set_ylabel("BJDTDB - JDUTC, seconds")
 ax[0].legend(loc="upper right")
 
-ax[1].plot(JDUTC, ms_per_day * (BJDTDB_pexo - BJDTDB_tempo2), "k-", label="PEXO - tempo2")
+diff = ms_per_day * (BJDTDB_correction_pexo - BJDTDB_tempo2 + MJDUTC)
+ax[1].plot(MJDUTC, diff, "k-", label="PEXO - tempo2")
 ax[1].set_xlabel("JDUTC, days")
 ax[1].set_ylabel("BJDTDB[PEXO] - BJDTDB[tempo2], ms")
 ax[1].legend(loc="upper right")
 
 # show "spikes" locations
-mask = (ms_per_day * (BJDTDB_pexo - BJDTDB_tempo2)) > 1
-spikejds = JDUTC[mask]
-print("Spike locations:")
-for i, jd in enumerate(spikejds):
-    print(jd)
-    ax[1].text(jd+10, 1 + i*1, str(jd), color="r")
+# spikejds = MJDUTC[diff > 1]
+# print("Spike locations:")
+# for i, jd in enumerate(spikejds):
+#     print(jd)
+#     ax[1].text(jd+10, 1 + i*1, str(jd), color="r")
 
 plt.savefig("PEXOvsTempo2.pdf")
 plt.show()
 
-
+exit()
 np.savetxt(
     "PEXOvsTempo2.csv",
     np.array([
