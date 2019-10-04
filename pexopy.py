@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 
 # import helpers
@@ -12,7 +13,7 @@ class Pexo(object):
     """
     def __init__(self):
         self.setup()
-
+        self.suppress_output = True
         self.cwd = os.getcwd() # current directory
 
 
@@ -49,64 +50,81 @@ class Pexo(object):
             self.pexodir = pexodir
 
         # make sure this folder is legit
-        if \
-            not os.path.exists(self.pexodir) or \ 
+        if not os.path.exists(self.pexodir) or \
             not os.path.exists(os.path.join(self.pexodir, "code")) or \
             not os.path.isfile(os.path.join(self.pexodir, "code/pexo.R")):
             raise OSError("The PEXO directory specified is not valid.")
             
-
         self.pexo_main = os.path.join(self.pexodir, "code/pexo.R")
 
 
-    def _get_last_output(self):
-        """
-        Get
-        """
-        raise NotImplementedError("Pexo._get_last_output() is not yet implemented.")
+    def _validate_parameter(self, name, value):
+        if name in ["mode", "m"]:
+            if value not in ["emulate", "fit"]:
+                raise ValueError("'mode' parameter should be either 'emulate' or 'fit'.")
+        
+        elif name in ["component", "c"]:
+            if not bool(re.match("^[TtAaRr]+$", value)):
+                raise ValueError("'component' parameter should be timing (T), astrometry (A), radial velocity (R) and their combinations.")
+        
+        elif name in ["time", "t"]:
+            if not os.path.isfile(value):
+                raise ValueError("'time' parameter should be either a path to a timing file: epochs or times could be in 1-part or 2-part JD[UTC] format, or a 'Start End By' format.")
+        
+        elif name in ["par", "p"]:
+            if not os.path.isfile(value):
+                raise ValueError("'par' parameter should be a path to a PEXO parameter file.")
+        
+        elif name in ["var", "v"]:
+            if type(value) != str:
+                raise ValueError("'var' parameter should contain output variables.")
+        
+        elif name in ["out", "o"]:
+            if type(value) != str:
+                raise ValueError("'out' parameter should contain a path to save he output to.")
+
+        elif name in ["figure", "f"]:
+            if type(value) != str:
+                raise ValueError("'figure' parameter should be false or true.")
+
+        else:
+            raise ValueError(f"Unknown parameter name: '{name}'.")
 
 
-    def run(self, binary_model="DDGR", observatory=None, astrometry=None, binary=None):
+    def _construct_command(self, params):
+        command = f"{self.Rscript} pexo.R"
+        for key in params:
+            name = f"-{key}" if len(key) == 1 else f"--{key}"
+            command += f" {name} {params[key]}"
+        
+        return command
+
+
+    def run(self, params):
         """
         Run PEXO
+
+        params, <dict>: a dictionary of parameters, e.g. { "mode": "emulate" }
         """
-        self._validate_parameters(binary_model, observatory, astrometry, binary)
+        # TODO : custom parameter
+
+        # validate the parameters
+        for key in params:
+            self._validate_parameter(key, params[key])
 
         # go to pexo directory
         os.chdir(os.path.join(self.pexodir, "code"))
 
-        # see if you need output
-        # if self.suppress_output:
-        #     stderr = None
-        # else:
-        #     stderr = open('/dev/null', 'w')
-        stderr = open('/dev/null', 'w')
-        stdout = subprocess.STDOUT
-
-        # TODO : handle file/string/dictionary types
-        # assume args are strings
-        args = [binary_model, observatory, astrometry, binary]
-        cmd = [self.Rscript, self.pexo_main] + args
-
-        print("\n\nEXECUTING\n", " ".join(cmd))
+        cmd = self._construct_command(params)
 
         # RUN PEXO
-        result = subprocess.check_output(cmd, universal_newlines=True)
+        with open(os.devnull, 'w') as devnull:
+            result = subprocess.check_output(cmd.split(), stderr=devnull)
+
+
+        # TODO : read, parse the output, return it
 
         # go back to the original directory
         os.chdir(self.cwd)
 
-        # TODO : get the output files, turn them into objects?
         return result
-        
-
-    def _validate_parameters(self, binary_model, observatory, astrometry, binary):
-        # TODO : allow for file object, file paths and dictionaries
-
-        if binary_model not in ["kepler", "DD", "DDGR"]:
-            raise ValueError("Parameter 'binary_model' in Pexo.run() must be one of the following: 'kepler', 'DD', or 'DDGR'.")
-
-        if not isinstance(observatory, str):
-            raise NotImplementedError('validation is not implemented yet')
-
-Pexo()
