@@ -28,7 +28,7 @@ class Pexo(object):
         # Find and validate Rscript
 
         if Rscript is None: # find Rscript
-            rc = subprocess.call(['which', 'Rscript'])
+            rc = subprocess.call(['which', 'Rscript'], stdout=None)
             if rc == 0: # 'which' found the path
                 self.Rscript = subprocess.check_output("which Rscript", shell=True).decode("ascii").strip()
             else: # 'which' returned an error
@@ -56,6 +56,7 @@ class Pexo(object):
             raise OSError("The PEXO directory specified is not valid.")
             
         self.pexo_main = os.path.join(self.pexodir, "code/pexo.R")
+        self.pexodir_code = os.path.join(self.pexodir, "code")
 
 
     def _validate_parameter(self, name, value):
@@ -106,23 +107,41 @@ class Pexo(object):
 
         params, <dict>: a dictionary of parameters, e.g. { "mode": "emulate" }
         """
-        # TODO : custom parameter
+        ################
+        # TODO : custom parameters instead of paths
+        ################
 
         # validate the parameters
         for key in params:
             self._validate_parameter(key, params[key])
+        
+        # convert paths to relative to pexo directory
+        if "time" in params:
+            params["time"] = os.path.relpath(params["time"], start=self.pexodir_code)
+        if "t" in params:
+            params["t"] = os.path.relpath(params["t"], start=self.pexodir_code)
+        if "par" in params:
+            params["par"] = os.path.relpath(params["par"], start=self.pexodir_code)
+        if "p" in params:
+            params["p"] = os.path.relpath(params["p"], start=self.pexodir_code)
+
 
         # go to pexo directory
         os.chdir(os.path.join(self.pexodir, "code"))
 
         cmd = self._construct_command(params)
 
+        print(f"\n{os.getcwd()}\n{cmd}\n")
+
         # RUN PEXO
-        with open(os.devnull, 'w') as devnull:
-            result = subprocess.check_output(cmd.split(), stderr=devnull)
+        result = subprocess.check_output(cmd.split())
+        # with open(os.devnull, 'w') as devnull:
+        #     result = subprocess.check_output(cmd.split(), stderr=devnull)
 
 
+        ################
         # TODO : read, parse the output, return it
+        ################
 
         # go back to the original directory
         os.chdir(self.cwd)

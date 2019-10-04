@@ -1,13 +1,20 @@
 from pexopy import Pexo
 
-result = Pexo().run(
-    binary_model="DDGR",
-    observatory= "~/soft/pexo_test/code/observatory.par",
-    astrometry=  "~/soft/pexo_test/code/astrometry_AC.par",
-    binary=      "~/soft/pexo_test/code/kepler_AC.par"
-)
+tauCeti = {
+    "mode" : "emulate",
+    "c"    : "TR",
+    "time" : "../pexo/input/mjd42000to52000by10day.tim",
+    "par"  : "../pexo/input/TC_Fig11b.par"
+}
+
+alphaCen = {
+    "mode" : "emulate",
+    "c"    : "TA",
+    "time" : "../pexo/input/gaia80yrby10day.tim",
+    "par"  : "../pexo/input/ACAgaia.par"
+}
+
+
+result = Pexo().run(alphaCen)
 
 print("RESULT : ", result)
-
-# Rscript /home/timberhill/soft/pexo_test/code/binary_test.R DDGR ~/soft/pexo_test/code/observatory.par ~/soft/pexo_test/code/astrometry_AC.par ~/soft/pexo_test/code/kepler_AC.par
-# Rscript pexo.R DDGR observatory.par astrometry_AC.par kepler_AC.par
