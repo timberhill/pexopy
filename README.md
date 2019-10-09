@@ -5,7 +5,7 @@ A python wrapper for [PEXO](https://github.com/phillippro/pexo) software.
 **NOTE** : this is an early alpha and is under development.
 
 
-## Requirements
+### Requirements
 
 - Python 3+
 - [PEXO](https://github.com/phillippro/pexo) and its dependencies, see [documentation](http://rpubs.com/Fabo/pexo) for installation guidance.
@@ -25,10 +25,10 @@ setenv PEXODIR /example/path/to/pexo
 to ~/.tcshrc if you’re using tcsh.
 
 
-## Installation
+### Installation
 
 *coming soon*
 
-## Usage
+### Usage
 
 *coming soon*
