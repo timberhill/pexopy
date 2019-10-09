@@ -16,13 +16,13 @@ It is recommended to set an environment variable `$PEXODIR` to a path to the PEX
 export PEXODIR=/example/path/to/pexo
 ```
 
-to your ~/.bashrc or ~/.bash_profile if you’re using bash, or
+to your `~/.bashrc` or `~/.bash_profile` if you’re using bash, or
 
 ```sh
 setenv PEXODIR /example/path/to/pexo
 ```
 
-to ~/.tcshrc if you’re using tcsh.
+to `~/.tcshrc` if you’re using tcsh.
 
 
 ### Installation
