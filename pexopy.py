@@ -1,9 +1,7 @@
 import os
 import re
 import subprocess
-from parsers import *
-
-# import helpers
+from parsers import PexoPar, PexoTim
 
 
 class Pexo(object):
@@ -70,12 +68,14 @@ class Pexo(object):
                 raise ValueError("'component' parameter should be timing (T), astrometry (A), radial velocity (R) and their combinations.")
         
         elif name in ["time", "t"]:
-            if not os.path.isfile(value):
-                raise ValueError("'time' parameter should be either a path to a timing file: epochs or times could be in 1-part or 2-part JD[UTC] format, or a 'Start End By' format.")
+            pass
+            # if not os.path.isfile(value):
+            #     raise ValueError("'time' parameter should be either a path to a timing file: epochs or times could be in 1-part or 2-part JD[UTC] format, or a 'Start End By' format.")
         
         elif name in ["par", "p"]:
-            if not os.path.isfile(value):
-                raise ValueError("'par' parameter should be a path to a PEXO parameter file.")
+            pass
+            # if not os.path.isfile(value):
+            #     raise ValueError("'par' parameter should be a path to a PEXO parameter file.")
         
         elif name in ["var", "v"]:
             if type(value) != str:
@@ -109,7 +109,7 @@ class Pexo(object):
         params, <dict>: a dictionary of parameters, e.g. { "mode": "emulate" }
         """
         ################
-        # TODO : custom parameters instead of paths
+        # TODO : actual parameters instead of a dictionary
         ################
 
         # validate the parameters
@@ -118,14 +118,17 @@ class Pexo(object):
         
         # convert paths to relative to pexo directory
         if "time" in params:
-            params["time"] = os.path.relpath(params["time"], start=self.pexodir_code)
+            time_parser = PexoTim(params["time"])
+            params["time"] = os.path.relpath(time_parser.tim_path, start=self.pexodir_code)
         if "t" in params:
-            params["t"] = os.path.relpath(params["t"], start=self.pexodir_code)
+            time_parser = PexoTim(params["t"])
+            params["t"] = os.path.relpath(time_parser.tim_path, start=self.pexodir_code)
         if "par" in params:
-            params["par"] = os.path.relpath(params["par"], start=self.pexodir_code)
+            par_parser = PexoPar(params["par"])
+            params["par"] = os.path.relpath(par_parser.par_path, start=self.pexodir_code)
         if "p" in params:
-            params["p"] = os.path.relpath(params["p"], start=self.pexodir_code)
-
+            par_parser = PexoPar(params["p"])
+            params["p"] = os.path.relpath(par_parser.par_path, start=self.pexodir_code)
 
         # go to pexo directory
         os.chdir(os.path.join(self.pexodir, "code"))
