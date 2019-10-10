@@ -12,7 +12,7 @@ class Pexo(object):
     """
     def __init__(self):
         self.setup()
-        self.suppress_output = True
+        self.suppress_output = True # TODO : actually suppress output
         self.cwd = os.getcwd() # current directory
 
 

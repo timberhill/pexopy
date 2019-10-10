@@ -7,7 +7,13 @@ import os
 class PexoTim(object):
    """
    PEXOpy .tim file handler.
-   The constructor's `tim` argument is either a list of floats ot tuples of floats (1-part or 2-part JD[UTC]), or a path to a .tim file.
+   The constructor's `tim` argument is either a list/array of floats ot tuples of floats (1-part or 2-part JD[UTC]), or a path to a .tim file.
+
+   If it's a path, the file is parsed and validated.
+
+   If it's a list/array, it is validated and saved to a file.
+
+   Either way, the class instance has both the path (<PexoTim.tim_path>) and the dictionary (<PexoTim.tim>).
    """
    def __init__(self, tim):
       self._storage = "" # TODO : figure out a folder to store the input files in
