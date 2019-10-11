@@ -58,4 +58,5 @@ alphaCen = {
 
 result = Pexo().run(tauCeti)
 
-print("RESULT : ", result)
+print(result.dtype.names)
+print(result)

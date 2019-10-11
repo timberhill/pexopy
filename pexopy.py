@@ -1,7 +1,7 @@
 import os
 import re
 import subprocess
-from parsers import PexoPar, PexoTim
+from parsers import PexoPar, PexoTim, PexoOut
 
 
 class Pexo(object):
@@ -54,7 +54,7 @@ class Pexo(object):
             not os.path.isfile(os.path.join(self.pexodir, "code/pexo.R")):
             raise OSError("The PEXO directory specified is not valid.")
             
-        self.pexo_main = os.path.join(self.pexodir, "code/pexo.R")
+        self.pexo_main    = os.path.join(self.pexodir, "code/pexo.R")
         self.pexodir_code = os.path.join(self.pexodir, "code")
 
 
@@ -133,6 +133,22 @@ class Pexo(object):
         if "p" in params:
             self.par = PexoPar(params["p"])
             params["p"] = os.path.relpath(self.par.path, start=self.pexodir_code)
+        
+        # set up output handling
+        if "o" in params:
+            self.output_path = params["o"]
+        elif "out" in params:
+            self.output_path = params["out"]
+        else:
+            tail_par = os.path.basename(self.par.path).replace(".par", "")
+            tail_tim = os.path.basename(self.time.path).replace(".tim", "")
+            params["out"] = os.path.relpath(f"{PexoOut().storage}/{tail_par}-{tail_tim}.out", start=self.pexodir_code)
+            self.output_path = params["out"]
+        
+        # suppress plotting
+        if "f" not in params and "figure" not in params:
+            params["f"] = "FALSE"
+
 
         # go to pexo directory
         os.chdir(os.path.join(self.pexodir, "code"))
@@ -142,14 +158,12 @@ class Pexo(object):
         print(f"\n{os.getcwd()}\n{cmd}\n")
 
         # RUN PEXO
-        result = subprocess.check_output(cmd.split())
+        subprocess.check_output(cmd.split())
         # with open(os.devnull, 'w') as devnull:
         #     result = subprocess.check_output(cmd.split(), stderr=devnull)
+        # TODO : suppress the output
 
-
-        ################
-        # TODO : read, parse the output, return it
-        ################
+        result = PexoOut().read(self.output_path)
 
         # go back to the original directory
         os.chdir(self.cwd)

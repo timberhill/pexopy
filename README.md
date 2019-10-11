@@ -8,6 +8,7 @@ A python wrapper for [PEXO](https://github.com/phillippro/pexo) software.
 ### Requirements
 
 - Python 3+
+- NumPy
 - [PEXO](https://github.com/phillippro/pexo) and its dependencies, see [documentation](http://rpubs.com/Fabo/pexo) for installation guidance.
 
 It is recommended to set an environment variable `$PEXODIR` to a path to the PEXO repository. Add

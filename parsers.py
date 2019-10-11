@@ -2,6 +2,7 @@ from collections.abc import Sequence
 import numbers
 import hashlib
 import os
+from numpy import genfromtxt
 
 
 class UniqueFilename(str):
@@ -19,12 +20,16 @@ class PexoOut(object):
    """
    Read PEXO output file from the specified `path`.
    """
-   def __init__(self, path):
-      self.read(path)
+   def __init__(self):
+      self.storage = "cache"
 
 
-   def read(self, path):
-      raise NotImplementedError
+   def read(self, filename):
+      path = os.path.join(self.storage, filename)
+      if not os.path.isfile(path):
+         raise FileNotFoundError(f"PEXO output not found in the specified path: {path}")
+
+      return genfromtxt(path, names=True)
 
 
 
@@ -40,7 +45,7 @@ class PexoTim(object):
    Either way, the class instance has both the path (<PexoTim.tim_path>) and the dictionary (<PexoTim.tim>).
    """
    def __init__(self, tim):
-      self._storage = "cache" # TODO : figure out a folder to store the input files in
+      self._storage = "cache"
 
       if isinstance(tim, type(self)):
          self.data = tim.data
