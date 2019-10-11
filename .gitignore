@@ -6,6 +6,10 @@ __pycache__/
 # vscode stuff
 .vscode
 
+# .tim and .par in the cache
+cache/*.par
+cache/*.tim
+
 # C extensions
 *.so
 
