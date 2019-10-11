@@ -102,15 +102,18 @@ class Pexo(object):
         return command
 
 
-    def run(self, params):
+    def run(self, params={}, **args):
         """
         Run PEXO
 
         params, <dict>: a dictionary of parameters, e.g. { "mode": "emulate" }
+
+        **args : same, but as arguments
+
+        params and args are combined.
         """
-        ################
-        # TODO : actual parameters instead of a dictionary
-        ################
+        # combine params and function arguments
+        params = {**params, **args}
 
         # validate the parameters
         for key in params:
@@ -118,17 +121,18 @@ class Pexo(object):
         
         # convert paths to relative to pexo directory
         if "time" in params:
-            time_parser = PexoTim(params["time"])
-            params["time"] = os.path.relpath(time_parser.tim_path, start=self.pexodir_code)
+            self.time = PexoTim(params["time"])
+            params["time"] = os.path.relpath(self.time.path, start=self.pexodir_code)
         if "t" in params:
-            time_parser = PexoTim(params["t"])
-            params["t"] = os.path.relpath(time_parser.tim_path, start=self.pexodir_code)
+            self.time = PexoTim(params["t"])
+            params["t"] = os.path.relpath(self.time.path, start=self.pexodir_code)
+
         if "par" in params:
-            par_parser = PexoPar(params["par"])
-            params["par"] = os.path.relpath(par_parser.par_path, start=self.pexodir_code)
+            self.par = PexoPar(params["par"])
+            params["par"] = os.path.relpath(self.par.path, start=self.pexodir_code)
         if "p" in params:
-            par_parser = PexoPar(params["p"])
-            params["p"] = os.path.relpath(par_parser.par_path, start=self.pexodir_code)
+            self.par = PexoPar(params["p"])
+            params["p"] = os.path.relpath(self.par.path, start=self.pexodir_code)
 
         # go to pexo directory
         os.chdir(os.path.join(self.pexodir, "code"))

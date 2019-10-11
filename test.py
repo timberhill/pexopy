@@ -1,5 +1,7 @@
 from pexopy import Pexo
 import numpy as np
+from parsers import PexoPar
+
 
 tauCeti_par = {
     "name"          : "TauCeti",
@@ -42,8 +44,8 @@ tauCeti = {
     "mode" : "emulate",
     "c"    : "TR",
     "time" : np.linspace(2442000.5, 2443000.5, 100),
-    # "par"  : "../pexo/input/TC_Fig11b.par",
-    "par"  : tauCeti_par
+    "par"  : PexoPar(tauCeti_par),
+    # "par"  : tauCeti_par
 }
 
 alphaCen = {

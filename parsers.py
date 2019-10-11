@@ -1,6 +1,30 @@
 from collections.abc import Sequence
 import numbers
+import hashlib
 import os
+
+
+class UniqueFilename(str):
+   """
+   Generates an MD5 hash from the `contents` (<str>) and returns a string in a format f'{prepend}{md5}{append}'
+   """
+   def __new__(cls, contents, prepend="", append="", *args, **kwargs):
+      md5 = hashlib.md5(contents.encode("utf-8")).hexdigest()
+      name = f"{prepend}{md5}{append}"
+      # TODO : handle existing files?
+      return str.__new__(cls, name)
+
+
+class PexoOut(object):
+   """
+   Read PEXO output file from the specified `path`.
+   """
+   def __init__(self, path):
+      self.read(path)
+
+
+   def read(self, path):
+      raise NotImplementedError
 
 
 
@@ -16,14 +40,17 @@ class PexoTim(object):
    Either way, the class instance has both the path (<PexoTim.tim_path>) and the dictionary (<PexoTim.tim>).
    """
    def __init__(self, tim):
-      self._storage = "" # TODO : figure out a folder to store the input files in
+      self._storage = "cache" # TODO : figure out a folder to store the input files in
 
-      if isinstance(tim, str): # this is a path to a file
-         self.tim = self._parse_tim(tim)
-         self.tim_path = tim
+      if isinstance(tim, type(self)):
+         self.data = tim.data
+         self.path = tim.path
+      elif isinstance(tim, str): # this is a path to a file
+         self.data = self._parse_tim(tim)
+         self.path = tim
       elif isinstance(tim, list) or 'array' in str(type(tim)): # this is a list or array
-         self.tim = tim
-         self.tim_path = self._generate_tim(tim)
+         self.data = tim
+         self.path = self._generate_tim(tim)
       else:
          raise ValueError("PexoTim's argument `tim` should be a list of numbers, a list of tuples of numbers, or a path to a .tim file")
 
@@ -45,23 +72,25 @@ class PexoTim(object):
    
 
    def _generate_tim(self, tim):
-      filename = "tempfile.tim" # TODO : generate a unique name for this file
-      tim_path = os.path.join(self._storage, filename)
+      contents = ""
+      try:
+         for jd in tim:
+            if isinstance(jd, numbers.Number):
+               contents += f"{jd}\n"
+            elif len(jd) == 2:
+               contents += f"{jd[0]} {jd[1]}\n"
+            else:
+               raise TypeError()
+      except TypeError:
+         raise ValueError("`tim` argument should be a list of numbers, a list of tuples of numbers, or a path to a .tim file")
+   
+      filename = UniqueFilename(contents, append=".tim") # TODO : generate a unique name for this file
+      path = os.path.join(self._storage, filename)
                
-      with open(tim_path, "w") as f:
-         try:
-            for jd in tim:
-               if isinstance(jd, numbers.Number):
-                  f.write(f"{jd}\n")
-               elif len(jd) == 2:
-                  f.write(f"{jd[0]} {jd[1]}\n")
-               else:
-                  raise TypeError()
-         except TypeError:
-            raise ValueError("`tim` argument should be a list of numbers, a list of tuples of numbers, or a path to a .tim file")
-      
-      return tim_path
+      with open(path, "w") as f:
+         f.write(contents)
 
+      return path
 
 
 class PexoPar(object):
@@ -72,52 +101,65 @@ class PexoPar(object):
    If it's a path, the file is parsed and validated.
 
    If it's a dictionary, it's validated and saved to a file.
+   You can also just add parameters as function arguments.
 
    Either way, the class instance has both the path (<PexoPar.par_path>) and the dictionary (<PexoPar.par>).
    """
-   def __init__(self, par):
-      self._storage = "" # TODO : figure out a folder to store the input files in
-
-      if isinstance(par, str): # this is a path to a file
-         self.par = self._parse_par(par)
-         self.par_path = par
+   def __init__(self, par, **args):
+      self._storage = "cache" # TODO : figure out a folder to store the input files in
+      
+      if isinstance(par, type(self)):
+         self.data = par.data
+         self.path = par.path
+      elif isinstance(par, str): # this is a path to a file
+         self.data = self._parse_par(par)
+         self.path = par
       elif isinstance(par, dict): # this is a dictionary with the parameters
-         self.par = par
-         self.par_path = self._generate_par(par)
+         par = {**par, **args}
+         self.data = par
+         self.path = self._generate_par(par)
       else:
          raise ValueError("`par` argument is either a dictionary with the parameters, or a path to a file with the parameters.")
 
 
    def _validate_parameter(self, name, value, error=""):
-      if name not in self._par: # unknown parameterimport numpy as np
+      if name not in self._par: # unknown parameter
          raise KeyError(f"{error}Unknown parameter '{name}'.")
 
       options = self._par[name]["options"]
       param_type = self._par[name]["type"]
 
-      # cover the boolean conversion
+      # cover the type-str conversion
       if param_type == bool and isinstance(value, str) and value.lower() == "true":
          value = True
       if param_type == bool and isinstance(value, str) and value.lower() == "false":
          value = False
+      if param_type == numbers.Number: # try parsing the string into float 
+         value = float(value)
+
       if options is not None and value not in options: # there are some set options for this parameter
          raise ValueError(f"{error}The value of '{name}' should be one of {options}")
 
-      if param_type == numbers.Number: # try parsing the string into float 
-         value = float(value)
       if not isinstance(value, param_type):
          raise ValueError(f"{error}The value of '{name}' should be of type {param_type}")
 
 
-   def _generate_par(self, par_dict):
-      filename = "tempfile.par" # TODO : generate a unique name for this file
+   def _generate_par(self, par_dict):      
+      contents = ""
+      for key in par_dict:
+         value = par_dict[key]
+         self._validate_parameter(key, value)
+
+         # handle the bool-to-str
+         value = str(value).upper() if isinstance(value, bool) else value
+         contents += f"{key} {value}\n"
+
+      filename = UniqueFilename(contents, append=".par")
       par_path = os.path.join(self._storage, filename)
-               
-      with open(par_path, "w") as f:
-         for key in par_dict:
-               self._validate_parameter(key, par_dict[key])
-               f.write(f"{key} {par_dict[key]}\n")
       
+      with open(par_path, "w") as f:
+         f.write(contents)
+
       return par_path
 
 
@@ -139,6 +181,19 @@ class PexoPar(object):
                par[s[0]] = s[1]
          
       return par
+   
+
+   def info(self):
+      """
+      Print information about the parameters
+      """
+      for key in self._par:
+         t = str(self._par["type"])
+         o = "" if self._par["options"] is None else f", options: {self._par['options']}"
+         print(f"{key}, {t}{o}")
+         
+         d = self._par["description"]
+         print(f"\t{d}\n")
 
 
    _par = {
