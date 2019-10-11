@@ -9,6 +9,7 @@ __pycache__/
 # .tim and .par in the cache
 cache/*.par
 cache/*.tim
+cache/*.out
 
 # C extensions
 *.so
