@@ -34,7 +34,7 @@ to `~/.tcshrc` if you’re using tcsh.
 
 To run PEXO, call function `Pexo().run()` and specify the parameters.
 
-### Using input file paths:
+### Using input file paths
 
 ```python
 from pexopy import Pexo
@@ -65,7 +65,7 @@ The output will be
  (2471816., 0.00452725, 2471816., 0.00408269)]
 ```
 
-### Input files as dictionaries:
+### Input files as dictionaries
 
 ```python
 from pexopy import Pexo
@@ -115,7 +115,7 @@ pexo_output = Pexo().run(
 )
 ```
 
-### Using `PexoPar()` and `PexoTim` objects:
+### Using `PexoPar` and `PexoTim` objects
 
 ```python
 from pexopy import Pexo, PexoPar, PexoTim
@@ -167,6 +167,8 @@ pexo_output = Pexo().run(
 )
 ```
 
+### `setup()`
+
 `Pexo().setup()` is needed is you want to specify custom paths to you Rscript installation (determined from `which Rscript` otherwise) or PEXO repository (uses `$PEXODIR` environment variable otherwise):
 
 ```python
@@ -174,5 +176,7 @@ from pexopy import Pexo
 pexo = Pexo()
 pexo.setup(Rscript="/path/to/Rscript", pexodir="/path/to/pexo")
 ```
+
+### `clear_cache()`
 
 As `pexopy` creates temporary input and output files, you might want to clear them with `Pexo().clear_cache()`.
