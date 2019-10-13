@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import settings
 from parsers import PexoPar, PexoTim, PexoOut
 
 
@@ -10,9 +11,9 @@ class Pexo(object):
 
 
     """
-    def __init__(self):
+    def __init__(self, suppress_output=True):
         self.setup()
-        self.suppress_output = True # TODO : actually suppress output
+        self.suppress_output = suppress_output # TODO : actually suppress output
         self.cwd = os.getcwd() # current directory
 
 
@@ -20,9 +21,9 @@ class Pexo(object):
         """
         Set up the wrapper.
 
-        Rscript, <str>: path to Rscript, optional
+        `Rscript`, str: path to Rscript, optional
 
-        pexodir, <str>: path to PEXO repository, optional if $PEXODIR environment variable is installed.
+        `pexodir`, str: path to PEXO repository, optional if $PEXODIR environment variable is installed.
         """
         # Find and validate Rscript
 
@@ -59,113 +60,118 @@ class Pexo(object):
 
 
     def _validate_parameter(self, name, value):
-        if name in ["mode", "m"]:
+        known_commands = ["mode", "m", "component", "c", "time", "t", "par", "p", "var", "v", "out", "o", "figure", "f"]
+        if name not in known_commands:
+            raise ValueError(f"Unknown parameter name: '{name}'.")
+
+        if name in ["mode", "m"] and value is not None:
             if value not in ["emulate", "fit"]:
                 raise ValueError("'mode' parameter should be either 'emulate' or 'fit'.")
         
-        elif name in ["component", "c"]:
+        elif name in ["component", "c"] and value is not None:
             if not bool(re.match("^[TtAaRr]+$", value)):
                 raise ValueError("'component' parameter should be timing (T), astrometry (A), radial velocity (R) and their combinations.")
         
         elif name in ["time", "t"]:
-            pass
-            # if not os.path.isfile(value):
-            #     raise ValueError("'time' parameter should be either a path to a timing file: epochs or times could be in 1-part or 2-part JD[UTC] format, or a 'Start End By' format.")
+            pass # this is validated while parsing
         
         elif name in ["par", "p"]:
-            pass
-            # if not os.path.isfile(value):
-            #     raise ValueError("'par' parameter should be a path to a PEXO parameter file.")
+            pass # this is validated while parsing
         
-        elif name in ["var", "v"]:
+        elif name in ["var", "v"] and value is not None:
             if type(value) != str:
                 raise ValueError("'var' parameter should contain output variables.")
         
-        elif name in ["out", "o"]:
+        elif name in ["out", "o"] and value is not None:
             if type(value) != str:
-                raise ValueError("'out' parameter should contain a path to save he output to.")
+                raise ValueError("'out' parameter should contain a path to save the output to.")
 
-        elif name in ["figure", "f"]:
-            if type(value) != str:
-                raise ValueError("'figure' parameter should be false or true.")
-
-        else:
-            raise ValueError(f"Unknown parameter name: '{name}'.")
+        elif name in ["figure", "f"] and value is not None:
+            if value not in ["TRUE", "FALSE"]:
+                raise ValueError("'figure' parameter should be 'FALSE' or 'TRUE'.")
 
 
     def _construct_command(self, params):
         command = f"{self.Rscript} pexo.R"
         for key in params:
-            name = f"-{key}" if len(key) == 1 else f"--{key}"
-            command += f" {name} {params[key]}"
+            if params[key] is not None:
+                name = f"-{key}" if len(key) == 1 else f"--{key}"
+                command += f" {name} {params[key]}"
         
         return command
 
 
-    def run(self, params={}, **args):
+    def run(self, mode="emulate", component="TAR", time=None, par=None, var=None, out=None):
         """
-        Run PEXO
+        Run PEXO.
 
-        params, <dict>: a dictionary of parameters, e.g. { "mode": "emulate" }
 
-        **args : same, but as arguments
+        `mode`, str: PEXO mode, `emulate` or `fit` [optional; default=emulate].
 
-        params and args are combined.
+        `component`, str: PEXO model component: timing (T), astrometry (A), radial velocity (R) and their combinations [optional; default='TAR'].
+
+        `time`, str/array/tuple/PexoTim: Four options are possible: 1. Timing file path with epochs/times in 1-part or 2-part JD[UTC] format; 2. Array/list of 1-part or 2-part JD[UTC], with a shape (N,1) or (N,2); 3. Tuple with floats/ints like (from, to, step); 4. PexoTim object [mandatory if mode='emulate'].
+
+        `par`, str/dict/PexoPar: Parameters for models, observatory, for Keplerian/binary motion etc. The value must be a parameter file path, a dictionary with the parameters or a PexoPar object . Refer to the documentation for the full list [mandatory].
+
+        `var`, str/array_like: Output variables as an array/list or space-separated string. Refer to the documentation for the full list [optional; default=None].
+
+        `out`, str: Output file name: relative or absolute path [optional].
         """
-        # combine params and function arguments
-        params = {**params, **args}
 
-        # validate the parameters
-        for key in params:
-            self._validate_parameter(key, params[key])
+        # --time is mandatory for emulation
+        if time == "emulate" and time is None: # TODO : handle the tuple time=(2465000, 2466000, 10) case
+            raise ValueError("The `time` argument is mandatory for emulation.")
         
-        # convert paths to relative to pexo directory
-        if "time" in params:
-            self.time = PexoTim(params["time"])
-            params["time"] = os.path.relpath(self.time.path, start=self.pexodir_code)
-        if "t" in params:
-            self.time = PexoTim(params["t"])
-            params["t"] = os.path.relpath(self.time.path, start=self.pexodir_code)
+        if par is None:
+            raise ValueError("The `par` argument is mandatory.")
 
-        if "par" in params:
-            self.par = PexoPar(params["par"])
-            params["par"] = os.path.relpath(self.par.path, start=self.pexodir_code)
-        if "p" in params:
-            self.par = PexoPar(params["p"])
-            params["p"] = os.path.relpath(self.par.path, start=self.pexodir_code)
+        # output parameters, list -> str
+        if isinstance(var, list) or 'array' in str(type(var)):
+            var = " ".join(var)
+
+        # read/generate/validate input files
+        self.time = PexoTim(time)
+        self.par = PexoPar(par)
         
         # set up output handling
-        if "o" in params:
-            self.output_path = params["o"]
-        elif "out" in params:
-            self.output_path = params["out"]
-        else:
+        if out is None:
             tail_par = os.path.basename(self.par.path).replace(".par", "")
             tail_tim = os.path.basename(self.time.path).replace(".tim", "")
-            params["out"] = os.path.relpath(f"{PexoOut().storage}/{tail_par}-{tail_tim}.out", start=self.pexodir_code)
-            self.output_path = params["out"]
-        
-        # suppress plotting
-        if "f" not in params and "figure" not in params:
-            params["f"] = "FALSE"
+            self.out = os.path.relpath(os.path.join(settings.out_storage, f"{tail_par}-{tail_tim}.out"), start=self.pexodir_code)
+        else:
+            self.out = os.path.relpath(out, start=self.pexodir_code)
 
+        # collect the parameters
+        params = {
+            "m" : mode,
+            "c" : component,
+            "t" : os.path.relpath(self.time.path, start=self.pexodir_code),
+            "p" : os.path.relpath(self.par.path,  start=self.pexodir_code),
+            "v" : var,
+            "o" : self.out,
+            "f" : "FALSE" # suppress plotting
+        }
 
-        # go to pexo directory
-        os.chdir(os.path.join(self.pexodir, "code"))
+        print(self.out)
+
+        # validate the parameters
+        for param in params:
+            self._validate_parameter(param, params[param])
 
         cmd = self._construct_command(params)
-
         print(f"\n{os.getcwd()}\n{cmd}\n")
 
         # RUN PEXO
+        os.chdir(os.path.join(self.pexodir, "code")) # go to pexo code directory
         subprocess.check_output(cmd.split())
-        # with open(os.devnull, 'w') as devnull:
-        #     result = subprocess.check_output(cmd.split(), stderr=devnull)
+        output = PexoOut().read(self.out)
+        os.chdir(self.cwd)
         # TODO : suppress the output
 
-        result = PexoOut().read(self.output_path)
+        return output
 
-        # go back to the original directory
-        os.chdir(self.cwd)
 
-        return result
+
+if __name__ == "__main__":
+    raise Exception("Please import Pexo class to use it.")

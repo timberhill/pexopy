@@ -1,8 +1,8 @@
-from collections.abc import Sequence
 import numbers
 import hashlib
 import os
 from numpy import genfromtxt
+import settings
 
 
 class UniqueFilename(str):
@@ -21,16 +21,14 @@ class PexoOut(object):
    Read PEXO output file from the specified `path`.
    """
    def __init__(self):
-      self.storage = "cache"
+      self._storage = settings.out_storage
 
 
-   def read(self, filename):
-      path = os.path.join(self.storage, filename)
+   def read(self, path):
       if not os.path.isfile(path):
          raise FileNotFoundError(f"PEXO output not found in the specified path: {path}")
 
       return genfromtxt(path, names=True)
-
 
 
 class PexoTim(object):
@@ -45,7 +43,7 @@ class PexoTim(object):
    Either way, the class instance has both the path (<PexoTim.tim_path>) and the dictionary (<PexoTim.tim>).
    """
    def __init__(self, tim):
-      self._storage = "cache"
+      self._storage = settings.tim_storage
 
       if isinstance(tim, type(self)):
          self.data = tim.data
@@ -61,7 +59,7 @@ class PexoTim(object):
 
    
    def _parse_tim(self, tim_path):
-      # read the .tim file into a dictionary
+      # read the .tim file into an array
       tim = []
       with open(tim_path) as f:
          for line in f:
@@ -111,7 +109,7 @@ class PexoPar(object):
    Either way, the class instance has both the path (<PexoPar.par_path>) and the dictionary (<PexoPar.par>).
    """
    def __init__(self, par, **args):
-      self._storage = "cache" # TODO : figure out a folder to store the input files in
+      self._storage = settings.par_storage
       
       if isinstance(par, type(self)):
          self.data = par.data
@@ -408,3 +406,8 @@ class PexoPar(object):
          "type"       : numbers.Number
       }
    }
+
+
+
+if __name__ == "__main__":
+    raise Exception("Please import Pexo class to use it.")
