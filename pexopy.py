@@ -92,11 +92,13 @@ class Pexo(object):
 
 
     def _construct_command(self, params):
-        command = f"{self.Rscript} pexo.R"
+        command = [self.Rscript, "pexo.R"]
         for key in params:
             if params[key] is not None:
                 name = f"-{key}" if len(key) == 1 else f"--{key}"
-                command += f" {name} {params[key]}"
+                command.append(name)
+                command.append(str(params[key]))
+
         
         return command
 
@@ -120,7 +122,7 @@ class Pexo(object):
         """
 
         # --time is mandatory for emulation
-        if time == "emulate" and time is None: # TODO : handle the tuple time=(2465000, 2466000, 10) case
+        if time == "emulate" and time is None:
             raise ValueError("The `time` argument is mandatory for emulation.")
         
         if par is None:
@@ -131,13 +133,21 @@ class Pexo(object):
             var = " ".join(var)
 
         # read/generate/validate input files
-        self.time = PexoTim(time)
         self.par = PexoPar(par)
+        self.pararg = os.path.relpath(self.par.path,  start=self.pexodir_code)
+        if type(time) == tuple and len(time) == 3:
+            self.timearg = f"{time[0]} {time[1]} {time[2]}"
+        else:
+            self.time = PexoTim(time)
+            self.timearg = os.path.relpath(self.time.path, start=self.pexodir_code)
         
         # set up output handling
         if out is None:
+            if type(time) == tuple and len(time) == 3:
+                tail_tim = "-".join(str(t).replace(".", "_") for t in time)
+            else:
+                tail_tim = os.path.basename(self.time.path).replace(".tim", "")
             tail_par = os.path.basename(self.par.path).replace(".par", "")
-            tail_tim = os.path.basename(self.time.path).replace(".tim", "")
             self.out = os.path.relpath(os.path.join(settings.out_storage, f"{tail_par}-{tail_tim}.out"), start=self.pexodir_code)
         else:
             self.out = os.path.relpath(out, start=self.pexodir_code)
@@ -146,8 +156,8 @@ class Pexo(object):
         params = {
             "m" : mode,
             "c" : component,
-            "t" : os.path.relpath(self.time.path, start=self.pexodir_code),
-            "p" : os.path.relpath(self.par.path,  start=self.pexodir_code),
+            "t" : self.timearg,
+            "p" : self.pararg,
             "v" : var,
             "o" : self.out,
             "f" : "FALSE" # suppress plotting
@@ -160,11 +170,11 @@ class Pexo(object):
             self._validate_parameter(param, params[param])
 
         cmd = self._construct_command(params)
-        print(f"\n{os.getcwd()}\n{cmd}\n")
+        print(" ".join(cmd))
 
         # RUN PEXO
         os.chdir(os.path.join(self.pexodir, "code")) # go to pexo code directory
-        subprocess.check_output(cmd.split())
+        subprocess.check_output(cmd)
         output = PexoOut().read(self.out)
         os.chdir(self.cwd)
         # TODO : suppress the output

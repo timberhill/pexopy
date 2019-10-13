@@ -43,7 +43,7 @@ tauCeti_par = {
 tauCeti = {
     "mode" : "emulate",
     "component"    : "TR",
-    "time" : np.linspace(2442000.5, 2443000.5, 100),
+    "time" : np.arange(2442000.5, 2443000.5, 10),
     "par"  : PexoPar(tauCeti_par),
     # "par"  : tauCeti_par
 }
