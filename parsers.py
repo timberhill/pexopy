@@ -4,6 +4,7 @@ import os
 from numpy import genfromtxt
 import settings
 
+# TODO: add custom paths for the input files
 
 class UniqueFilename(str):
    """
@@ -108,7 +109,7 @@ class PexoPar(object):
 
    Either way, the class instance has both the path (<PexoPar.par_path>) and the dictionary (<PexoPar.par>).
    """
-   def __init__(self, par, **args):
+   def __init__(self, par={}, **args):
       self._storage = settings.par_storage
       
       if isinstance(par, type(self)):
