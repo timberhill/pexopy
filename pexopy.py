@@ -122,7 +122,7 @@ class Pexo(object):
         """
 
         # --time is mandatory for emulation
-        if time == "emulate" and time is None:
+        if mode == "emulate" and time is None:
             raise ValueError("The `time` argument is mandatory for emulation.")
         
         if par is None:
@@ -151,7 +151,7 @@ class Pexo(object):
             self.out = os.path.relpath(os.path.join(settings.out_storage, f"{tail_par}-{tail_tim}.out"), start=self.pexodir_code)
         else:
             self.out = os.path.relpath(out, start=self.pexodir_code)
-
+            
         # collect the parameters
         params = {
             "m" : mode,
@@ -163,14 +163,11 @@ class Pexo(object):
             "f" : "FALSE" # suppress plotting
         }
 
-        print(self.out)
-
         # validate the parameters
         for param in params:
             self._validate_parameter(param, params[param])
 
         cmd = self._construct_command(params)
-        print(" ".join(cmd))
 
         # RUN PEXO
         os.chdir(os.path.join(self.pexodir, "code")) # go to pexo code directory
@@ -180,6 +177,18 @@ class Pexo(object):
         # TODO : suppress the output
 
         return output
+    
+
+    def clear_cache(self, suppress_output=False):
+        count = 0
+        for folder in [settings.par_storage, settings.tim_storage, settings.out_storage]:
+            filenames = os.listdir(folder)
+            for filename in filenames:
+                os.remove(os.path.join(folder, filename))
+                count += 1
+        
+        if not suppress_output:
+            print(f"{count} files removed.")
 
 
 

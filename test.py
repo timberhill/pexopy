@@ -42,10 +42,9 @@ tauCeti_par = {
 
 tauCeti = {
     "mode" : "emulate",
-    "component"    : "TR",
+    "component"    : "TRA",
     "time" : np.arange(2442000.5, 2443000.5, 10),
-    "par"  : PexoPar(tauCeti_par),
-    # "par"  : tauCeti_par
+    "par"  : tauCeti_par,
 }
 
 alphaCen = {
@@ -56,7 +55,10 @@ alphaCen = {
 }
 
 
-result = Pexo().run(**tauCeti)
+pexo = Pexo()
+pexo.clear_cache()
+result = pexo.run(**tauCeti)
+
 
 print(result.dtype.names)
-print(result)
+# print(result)
