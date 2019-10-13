@@ -1,8 +1,10 @@
 import os
 import re
 import subprocess
-import settings
-from parsers import PexoPar, PexoTim, PexoOut
+from .settings import out_storage
+from .pexopar import PexoPar
+from .pexotim import PexoTim
+from .pexoout import PexoOut
 
 
 class Pexo(object):
@@ -148,7 +150,7 @@ class Pexo(object):
             else:
                 tail_tim = os.path.basename(self.time.path).replace(".tim", "")
             tail_par = os.path.basename(self.par.path).replace(".par", "")
-            self.out = os.path.relpath(os.path.join(settings.out_storage, f"{tail_par}-{tail_tim}.out"), start=self.pexodir_code)
+            self.out = os.path.relpath(os.path.join(out_storage, f"{tail_par}-{tail_tim}.out"), start=self.pexodir_code)
         else:
             self.out = os.path.relpath(out, start=self.pexodir_code)
             
@@ -181,7 +183,7 @@ class Pexo(object):
 
     def clear_cache(self, suppress_output=False):
         count = 0
-        for folder in [settings.par_storage, settings.tim_storage, settings.out_storage]:
+        for folder in [par_storage, tim_storage, out_storage]:
             filenames = os.listdir(folder)
             for filename in filenames:
                 os.remove(os.path.join(folder, filename))
