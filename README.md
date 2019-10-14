@@ -1,4 +1,4 @@
-# pexopy
+# `pexopy`
 
 A python wrapper for [PEXO](https://github.com/phillippro/pexo) software.
 
@@ -42,6 +42,8 @@ To run PEXO, call function `Pexo().run()` and specify the parameters.
 
 ### Using input file paths
 
+The files in this example are from [PEXO repository](https://github.com/phillippro/pexo/tree/master/input).
+
 ```python
 from pexopy import Pexo
 
@@ -57,9 +59,9 @@ print(pexo_output.dtype.names)
 print(pexo_output)
 ```
 
-The output will be
+Output:
 
-```python
+```plain
 <class 'numpy.ndarray'>
 
 ('BJDtcb1', 'BJDtcb2', 'BJDtdb1', 'BJDtdb2')
@@ -71,11 +73,13 @@ The output will be
  (2471816., 0.00452725, 2471816., 0.00408269)]
 ```
 
+See output column description in [PEXO documentation](http://rpubs.com/Fabo/pexo).
+
 ### Input files as dictionaries
 
 ```python
 from pexopy import Pexo
-import numpy as np
+from numpy import arange
 
 tauCeti_par = {
     "name"          : "TauCeti",
@@ -116,7 +120,7 @@ tauCeti_par = {
 pexo_output = Pexo().run(
     mode="emulate",
     component="TAR",
-    time=np.arange(2442000.5, 2443000.5, 10),
+    time=arange(2442000.5, 2443000.5, 10),
     par=tauCeti_par,
 )
 ```
@@ -162,6 +166,7 @@ tauCeti_par = PexoPar(
     pmdec=854.16,
     rv=-16.68
 )
+# or, if you have a file, tauCeti_par = PexoPar("../pexo/input/TC_Fig11b.par")
 
 tim = PexoTim(np.arange(2442000.5, 2443000.5))
 
