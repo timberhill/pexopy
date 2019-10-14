@@ -1,7 +1,7 @@
 import os
 import re
 import subprocess
-from .settings import out_storage
+from .settings import out_storage, par_storage, tim_storage
 from .pexopar import PexoPar
 from .pexotim import PexoTim
 from .pexoout import PexoOut
