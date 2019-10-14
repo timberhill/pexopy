@@ -168,7 +168,7 @@ tauCeti_par = PexoPar(
 )
 # or, if you have a file, tauCeti_par = PexoPar("../pexo/input/TC_Fig11b.par")
 
-tim = PexoTim(np.arange(2442000.5, 2443000.5))
+tim = PexoTim(np.arange(2442000.5, 2443000.5, 10))
 
 pexo_output = Pexo().run(
     mode="emulate",

@@ -1,6 +1,6 @@
 import os
 import re
-import subprocess
+from subprocess import Popen, PIPE, call, check_output
 from .settings import out_storage, par_storage, tim_storage
 from .pexopar import PexoPar
 from .pexotim import PexoTim
@@ -10,12 +10,9 @@ from .pexoout import PexoOut
 class Pexo(object):
     """
     A Python wrapper for PEXO - https://github.com/phillippro/pexo/
-
-
     """
-    def __init__(self, suppress_output=True):
+    def __init__(self):
         self.setup()
-        self.suppress_output = suppress_output # TODO : actually suppress output
         self.cwd = os.getcwd() # current directory
 
 
@@ -30,9 +27,10 @@ class Pexo(object):
         # Find and validate Rscript
 
         if Rscript is None: # find Rscript
-            rc = subprocess.call(['which', 'Rscript'], stdout=None)
+            with open(os.devnull, 'w') as FNULL:
+                rc = call(['which', 'Rscript'], stdout=FNULL)
             if rc == 0: # 'which' found the path
-                self.Rscript = subprocess.check_output("which Rscript", shell=True).decode("ascii").strip()
+                self.Rscript = check_output("which Rscript", shell=True).decode("ascii").strip()
             else: # 'which' returned an error
                 raise OSError("Could not find Rscript. Make sure it's installed correctly or specify the path to it in Pexo.setup(Rscript=)")
         else: # use the path provided by user
@@ -105,10 +103,9 @@ class Pexo(object):
         return command
 
 
-    def run(self, mode="emulate", component="TAR", time=None, par=None, var=None, out=None):
+    def run(self, mode="emulate", component="TAR", time=None, par=None, var=None, out=None, suppress_output=True):
         """
         Run PEXO.
-
 
         `mode`, str: PEXO mode, `emulate` or `fit` [optional; default=emulate].
 
@@ -122,6 +119,7 @@ class Pexo(object):
 
         `out`, str: Output file name: relative or absolute path [optional].
         """
+        # TODO: suppress output? Is there a good way to read subprocess live output?
 
         # --time is mandatory for emulation
         if mode == "emulate" and time is None:
@@ -173,7 +171,11 @@ class Pexo(object):
 
         # RUN PEXO
         os.chdir(os.path.join(self.pexodir, "code")) # go to pexo code directory
-        subprocess.check_output(cmd)
+        with open(os.devnull, 'w') as FNULL:
+            rc = call(cmd, stdout=FNULL, stderr=FNULL)
+            if rc != 0:
+                raise ChildProcessError(f"Underlying PEXO code return non-zero [{rc}] exit status.")
+
         output = PexoOut().read(self.out)
         os.chdir(self.cwd)
         # TODO : suppress the output
@@ -191,8 +193,3 @@ class Pexo(object):
         
         if not suppress_output:
             print(f"{count} files removed.")
-
-
-
-if __name__ == "__main__":
-    raise Exception("Please import Pexo class to use it.")
