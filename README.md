@@ -1,20 +1,18 @@
-# `pexopy`
-
 A python wrapper for [PEXO](https://github.com/phillippro/pexo) software.
 
 **NOTE** : this is an early alpha and is under development.
 
-## Requirements
+# Requirements
 
 - Python 3+
 - NumPy
 - [PEXO](https://github.com/phillippro/pexo) and its dependencies, see [documentation](http://rpubs.com/Fabo/pexo) for installation guidance.
 
-## Installation
+# Installation
 
 Install the dependencies and set an environment variable `$PEXODIR` to a path to the PEXO repository. Add `export PEXODIR=/example/path/to/pexo` to your `~/.bashrc` or `~/.bash_profile` if you’re using bash, or `setenv PEXODIR /example/path/to/pexo`to `~/.tcshrc` if you’re using tcsh.
 
-### from this repository
+## from this repository
 
 ```sh
 git clone https://github.com/timberhill/pexopy.git
@@ -28,19 +26,19 @@ or
 pip install git+https://github.com/timberhill/pexopy.git -U
 ```
 
-### uninstall
+## uninstall
 
 ```sh
 pip uninstall pexopy
 ```
 
-## Usage
+# Usage
 
 `Pexo` object takes the same parameters as PEXO software, except in a pythonic way.
 
 To run PEXO, call function `Pexo().run()` and specify the parameters.
 
-### Using input file paths
+## Using input file paths
 
 The files in this example are from [PEXO repository](https://github.com/phillippro/pexo/tree/master/input).
 
@@ -75,7 +73,7 @@ Output:
 
 See output column description in [PEXO documentation](http://rpubs.com/Fabo/pexo).
 
-### Input files as dictionaries
+## Input files as dictionaries
 
 ```python
 from pexopy import Pexo
@@ -125,7 +123,7 @@ pexo_output = Pexo().run(
 )
 ```
 
-### Using `PexoPar` and `PexoTim` objects
+## Using `PexoPar` and `PexoTim` objects
 
 ```python
 from pexopy import Pexo, PexoPar, PexoTim
@@ -178,7 +176,7 @@ pexo_output = Pexo().run(
 )
 ```
 
-### `setup()`
+## `setup()`
 
 `Pexo().setup()` is needed is you want to specify custom paths to you Rscript installation (determined from `which Rscript` otherwise) or PEXO repository (uses `$PEXODIR` environment variable otherwise):
 
@@ -188,6 +186,6 @@ pexo = Pexo()
 pexo.setup(Rscript="/path/to/Rscript", pexodir="/path/to/pexo")
 ```
 
-### `clear_cache()`
+## `clear_cache()`
 
 As `pexopy` creates temporary input and output files, you might want to clear them with `Pexo().clear_cache()`.
