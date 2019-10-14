@@ -37,7 +37,7 @@ python setup.py install
 or
 
 ```sh
-pip install git+https://github.com/shbhuk/barycorrpy.git -U
+pip install git+https://github.com/timberhill/pexopy.git -U
 ```
 
 ### uninstall
