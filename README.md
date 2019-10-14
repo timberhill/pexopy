@@ -26,7 +26,25 @@ to `~/.tcshrc` if you’re using tcsh.
 
 ## Installation
 
-*coming soon*
+### from this repository
+
+```sh
+git clone https://github.com/timberhill/pexopy.git
+cd pexopy
+python setup.py install
+```
+
+or
+
+```sh
+pip install git+https://github.com/shbhuk/barycorrpy.git -U
+```
+
+### uninstall
+
+```sh
+pip uninstall pexopy
+```
 
 ## Usage
 
