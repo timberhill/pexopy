@@ -14,9 +14,14 @@ class Pexo(object):
     def __init__(self):
         self.setup()
         self.cwd = os.getcwd() # current directory
+    
+
+    def _print(self, message, verbose=True):
+        if verbose:
+            print(str(message))
 
 
-    def setup(self, Rscript=None, pexodir=None):
+    def setup(self, Rscript=None, pexodir=None, verbose=True):
         """
         Set up the wrapper.
 
@@ -39,6 +44,8 @@ class Pexo(object):
             else:
                 raise OSError("Specified Rscript path is not valid.")
 
+        self._print(f"Found Rscript at {self.Rscript}", verbose=verbose)
+
         # Find and validate PEXO directory path
 
         if pexodir is None:
@@ -55,6 +62,8 @@ class Pexo(object):
             not os.path.isfile(os.path.join(self.pexodir, "code/pexo.R")):
             raise OSError("The PEXO directory specified is not valid.")
             
+        self._print(f"Found PEXO at    {self.pexodir}", verbose=verbose)
+
         self.pexo_main    = os.path.join(self.pexodir, "code/pexo.R")
         self.pexodir_code = os.path.join(self.pexodir, "code")
 
@@ -103,7 +112,7 @@ class Pexo(object):
         return command
 
 
-    def run(self, mode="emulate", component="TAR", time=None, par=None, var=None, out=None, suppress_output=True):
+    def run(self, mode="emulate", component="TAR", time=None, par=None, var=None, out=None, verbose=True):
         """
         Run PEXO.
 
@@ -119,7 +128,7 @@ class Pexo(object):
 
         `out`, str: Output file name: relative or absolute path [optional].
         """
-        # TODO: suppress output? Is there a good way to read subprocess live output?
+        # TODO: suppress output / verbose? Is there a good way to read subprocess live output?
 
         # --time is mandatory for emulation
         if mode == "emulate" and time is None:
@@ -168,13 +177,17 @@ class Pexo(object):
             self._validate_parameter(param, params[param])
 
         cmd = self._construct_command(params)
-
         # RUN PEXO
         os.chdir(os.path.join(self.pexodir, "code")) # go to pexo code directory
+
+        self._print("Running PEXO with:\n$ " + " ".join(cmd) + "\n", verbose=verbose)
+
         with open(os.devnull, 'w') as FNULL:
             rc = call(cmd, stdout=FNULL, stderr=FNULL)
-            if rc != 0:
-                raise ChildProcessError(f"Underlying PEXO code return non-zero [{rc}] exit status.")
+            # if rc != 0:
+            #     raise ChildProcessError(f"Underlying PEXO code return non-zero [{rc}] exit status.")
+
+        self._print("Done.", verbose=verbose)
 
         output = PexoOut().read(self.out)
         os.chdir(self.cwd)
@@ -183,7 +196,7 @@ class Pexo(object):
         return output
     
 
-    def clear_cache(self, suppress_output=False):
+    def clear_cache(self, verbose=True):
         count = 0
         for folder in [par_storage, tim_storage, out_storage]:
             filenames = os.listdir(folder)
@@ -192,4 +205,4 @@ class Pexo(object):
                 count += 1
         
         if not suppress_output:
-            print(f"{count} files removed.")
+            self._print(f"{count} files removed.", verbose=verbose)
