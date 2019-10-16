@@ -127,6 +127,10 @@ class Pexo(object):
         `var`, str/array_like: Output variables as an array/list or space-separated string. Refer to the documentation for the full list [optional; default=None].
 
         `out`, str: Output file name: relative or absolute path [optional].
+
+        Returns:
+
+        <class 'numpy.ndarray'>, a table with the output variables (default or the ones specified in the `var` argument).
         """
         # TODO: suppress output / verbose? Is there a good way to read subprocess live output?
 
