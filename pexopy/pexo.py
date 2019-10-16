@@ -204,5 +204,5 @@ class Pexo(object):
                 os.remove(os.path.join(folder, filename))
                 count += 1
         
-        if not suppress_output:
+        if verbose:
             self._print(f"{count} files removed.", verbose=verbose)
