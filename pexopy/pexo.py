@@ -1,6 +1,7 @@
 import os
 import re
 from subprocess import Popen, PIPE, call, check_output
+from datetime import datetime
 from .settings import out_storage, par_storage, tim_storage
 from .pexopar import PexoPar
 from .pexotim import PexoTim
@@ -17,8 +18,9 @@ class Pexo(object):
     
 
     def _print(self, message, verbose=True):
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[0:10]
         if verbose:
-            print(str(message))
+            print(f"[{timestamp}] {str(message)}")
 
 
     def setup(self, Rscript=None, pexodir=None, verbose=True):
@@ -134,6 +136,9 @@ class Pexo(object):
         """
         # TODO: suppress output / verbose? Is there a good way to read subprocess live output?
 
+        if mode == "fit":
+            raise NotImplementedError("Fitting mode is not yet implemented, but it's coming soon.")
+
         # --time is mandatory for emulation
         if mode == "emulate" and time is None:
             raise ValueError("The `time` argument is mandatory for emulation.")
@@ -186,10 +191,14 @@ class Pexo(object):
 
         self._print("Running PEXO with:\n$ " + " ".join(cmd) + "\n", verbose=verbose)
 
-        with open(os.devnull, 'w') as FNULL:
-            rc = call(cmd, stdout=FNULL, stderr=FNULL)
-            # if rc != 0:
-            #     raise ChildProcessError(f"Underlying PEXO code return non-zero [{rc}] exit status.")
+        if verbose:
+            rc = call(cmd)
+        else:
+            with open(os.devnull, 'w') as FNULL:
+                rc = call(cmd, stdout=FNULL, stderr=FNULL)
+
+        if rc != 0:
+            raise ChildProcessError(f"Underlying PEXO code return non-zero exit status {rc}.")
 
         self._print("Done.", verbose=verbose)
 
