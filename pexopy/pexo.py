@@ -203,9 +203,19 @@ class Pexo(object):
         self._print("Done.", verbose=verbose)
 
         output = PexoOut().read(self.out)
-        os.chdir(self.cwd)
         # TODO : suppress the output
 
+        # test purposes only
+        if verbose:
+            output_folder = os.path.dirname(self.out)
+            self._print("Output folder contents:")
+            self._print(output_folder)
+            for filename in os.listdir(output_folder):
+                path = os.path.join(output_folder, filename)
+                modified = datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S')
+                self._print(f"{modified}, {filename}")
+
+        os.chdir(self.cwd)
         return output
     
 
