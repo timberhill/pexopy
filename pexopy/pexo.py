@@ -23,7 +23,7 @@ class Pexo(object):
             print(f"[{timestamp}] {str(message)}")
 
 
-    def setup(self, Rscript=None, pexodir=None, verbose=True):
+    def setup(self, Rscript=None, pexodir=None, verbose=False):
         """
         Set up the wrapper.
 
@@ -186,6 +186,7 @@ class Pexo(object):
             self._validate_parameter(param, params[param])
 
         cmd = self._construct_command(params)
+
         # RUN PEXO
         os.chdir(os.path.join(self.pexodir, "code")) # go to pexo code directory
 
@@ -194,7 +195,7 @@ class Pexo(object):
         if verbose:
             rc = call(cmd)
         else:
-            with open(os.devnull, 'w') as FNULL:
+            with open(os.devnull, "w") as FNULL:
                 rc = call(cmd, stdout=FNULL, stderr=FNULL)
 
         if rc != 0:
@@ -203,17 +204,6 @@ class Pexo(object):
         self._print("Done.", verbose=verbose)
 
         output = PexoOut().read(self.out)
-        # TODO : suppress the output
-
-        # test purposes only
-        if verbose:
-            output_folder = os.path.dirname(self.out)
-            self._print("Output folder contents:")
-            self._print(output_folder)
-            for filename in os.listdir(output_folder):
-                path = os.path.join(output_folder, filename)
-                modified = datetime.fromtimestamp(os.path.getmtime(path)).strftime('%Y-%m-%d %H:%M:%S')
-                self._print(f"{modified}, {filename}")
 
         os.chdir(self.cwd)
         return output
