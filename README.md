@@ -120,6 +120,7 @@ pexo_output = Pexo().run(
     component="TAR",
     time=arange(2442000.5, 2443000.5, 10),
     par=tauCeti_par,
+    out="output.txt" # output file with `pexo_output` contents will be saved to the currect directory
 )
 ```
 
@@ -173,6 +174,7 @@ pexo_output = Pexo().run(
     component="TAR",
     time=tim,
     par=tauCeti_par,
+    out="output.txt" # output file with `pexo_output` contents will be saved to the currect directory
 )
 ```
 
@@ -184,6 +186,7 @@ pexo_output = Pexo().run(
 from pexopy import Pexo
 pexo = Pexo()
 pexo.setup(Rscript="/path/to/Rscript", pexodir="/path/to/pexo")
+# now you can run it
 ```
 
 ## `clear_cache()`
