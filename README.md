@@ -4,7 +4,7 @@ A python wrapper for [PEXO](https://github.com/phillippro/pexo) software.
 
 # Requirements
 
-- Python 3+
+- Python 2.7 or higher
 - NumPy
 - [PEXO](https://github.com/phillippro/pexo) and its dependencies, see [documentation](http://rpubs.com/Fabo/pexo) for installation guidance.
 
