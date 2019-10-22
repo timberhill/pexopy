@@ -42,7 +42,9 @@ class PexoTim(object):
             elif len(s) == 2:
                tim.append(tuple(s))
             else:
-               raise ValueError(f"Error while parsing the .tim file: {tim_path}. Must only have one or two columns, 1-part or 2-part JD[UTC].")
+               # errormessage = f"Error while parsing the .tim file: {tim_path}. Must only have one or two columns, 1-part or 2-part JD[UTC]." # python 3+
+               errormessage = "Error while parsing the .tim file: {}. Must only have one or two columns, 1-part or 2-part JD[UTC].".format(tim_path) # python 2.7
+               raise ValueError(errormessage)
          
       return tim
    
@@ -52,9 +54,11 @@ class PexoTim(object):
       try:
          for jd in tim:
             if isinstance(jd, numbers.Number):
-               contents += f"{jd}\n"
+               # contents += f"{jd}\n" # python 3+
+               contents += "{}\n".format(jd) # python 2.7
             elif len(jd) == 2:
-               contents += f"{jd[0]} {jd[1]}\n"
+               # contents += f"{jd[0]} {jd[1]}\n" # python 3+
+               contents += "{} {}\n".format(jd[0], jd[1]) # python 2.7
             else:
                raise TypeError()
       except TypeError:

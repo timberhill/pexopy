@@ -6,6 +6,9 @@ class UniqueFilename(str):
    """
    def __new__(cls, contents, prepend="", append="", *args, **kwargs):
       md5 = hashlib.md5(contents.encode("utf-8")).hexdigest()
-      name = f"{prepend}{md5}{append}"
+      # name = f"{prepend}{md5}{append}" # python 3+
+      name = "{}{}{}".format(prepend, md5, append) # python 2.7
+
       # TODO : handle existing files?
+      
       return str.__new__(cls, name)

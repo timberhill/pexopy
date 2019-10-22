@@ -20,7 +20,8 @@ class Pexo(object):
     def _print(self, message, verbose=True):
         timestamp = datetime.now().strftime("%H:%M:%S.%f")[0:10]
         if verbose:
-            print(f"[{timestamp}] {str(message)}")
+            # print(f"[{timestamp}] {str(message)}") # python 3+
+            print("[{}] {}".format(timestamp, str(message))) # python 2.7
 
 
     def setup(self, Rscript=None, pexodir=None, verbose=False):
@@ -46,7 +47,8 @@ class Pexo(object):
             else:
                 raise OSError("Specified Rscript path is not valid.")
 
-        self._print(f"Found Rscript at {self.Rscript}", verbose=verbose)
+        # self._print(f"Found Rscript at {self.Rscript}", verbose=verbose) # python 3+
+        self._print("Found Rscript at {}".format(self.Rscript), verbose=verbose) # python 2.7
 
         # Find and validate PEXO directory path
 
@@ -64,7 +66,8 @@ class Pexo(object):
             not os.path.isfile(os.path.join(self.pexodir, "code/pexo.R")):
             raise OSError("The PEXO directory specified is not valid.")
             
-        self._print(f"Found PEXO at    {self.pexodir}", verbose=verbose)
+        # self._print(f"Found PEXO at    {self.pexodir}", verbose=verbose) # python 3+
+        self._print("Found PEXO at    {}".format(self.pexodir), verbose=verbose) # python 2.7
 
         self.pexo_main    = os.path.join(self.pexodir, "code/pexo.R")
         self.pexodir_code = os.path.join(self.pexodir, "code")
@@ -73,7 +76,9 @@ class Pexo(object):
     def _validate_parameter(self, name, value):
         known_commands = ["mode", "m", "component", "c", "time", "t", "par", "p", "var", "v", "out", "o", "figure", "f"]
         if name not in known_commands:
-            raise ValueError(f"Unknown parameter name: '{name}'.")
+            # errormessage = f"Unknown parameter name: '{name}'." # python 3+
+            errormessage = "Unknown parameter name: '{}'.".format(name) # python 2.7
+            raise ValueError(errormessage)
 
         if name in ["mode", "m"] and value is not None:
             if value not in ["emulate", "fit"]:
@@ -106,11 +111,11 @@ class Pexo(object):
         command = [self.Rscript, "pexo.R"]
         for key in params:
             if params[key] is not None:
-                name = f"-{key}" if len(key) == 1 else f"--{key}"
+                # name = f"-{key}" if len(key) == 1 else f"--{key}" # python 3+
+                name = "-"+key if len(key) == 1 else "--"+key # python 2.7
                 command.append(name)
                 command.append(str(params[key]))
 
-        
         return command
 
 
@@ -134,8 +139,6 @@ class Pexo(object):
 
         <class 'numpy.ndarray'>, a table with the output variables (default or the ones specified in the `var` argument).
         """
-        # TODO: suppress output / verbose? Is there a good way to read subprocess live output?
-
         if mode == "fit":
             raise NotImplementedError("Fitting mode is not yet implemented, but it's coming soon.")
 
@@ -154,7 +157,8 @@ class Pexo(object):
         self.par = PexoPar(par)
         self.pararg = os.path.relpath(self.par.path,  start=self.pexodir_code)
         if type(time) == tuple and len(time) == 3:
-            self.timearg = f"{time[0]} {time[1]} {time[2]}"
+            # self.timearg = f"{time[0]} {time[1]} {time[2]}" # python 3+
+            self.timearg = "{} {} {}".format(time[0], time[1], time[2]) # python 2.7
         else:
             self.time = PexoTim(time)
             self.timearg = os.path.relpath(self.time.path, start=self.pexodir_code)
@@ -166,7 +170,8 @@ class Pexo(object):
             else:
                 tail_tim = os.path.basename(self.time.path).replace(".tim", "")
             tail_par = os.path.basename(self.par.path).replace(".par", "")
-            self.out = os.path.relpath(os.path.join(out_storage, f"{tail_par}-{tail_tim}.out"), start=self.pexodir_code)
+            # self.out = os.path.relpath(os.path.join(out_storage, f"{tail_par}-{tail_tim}.out"), start=self.pexodir_code) # python 3+
+            self.out = os.path.relpath(os.path.join(out_storage, "{}-{}.out".format(tail_par, tail_tim)), start=self.pexodir_code) # python 2.7
         else:
             self.out = os.path.relpath(out, start=self.pexodir_code)
             
@@ -199,7 +204,9 @@ class Pexo(object):
                 rc = call(cmd, stdout=FNULL, stderr=FNULL)
 
         if rc != 0:
-            raise ChildProcessError(f"Underlying PEXO code return non-zero exit status {rc}.")
+            # errormessage = f"Underlying PEXO code return non-zero exit status {rc}." # python 3+
+            errormessage = "Underlying PEXO code return non-zero exit status {}.".format(rc) # python 2.7
+            raise ChildProcessError()
 
         self._print("Done.", verbose=verbose)
 
@@ -218,4 +225,5 @@ class Pexo(object):
                 count += 1
         
         if verbose:
-            self._print(f"{count} files removed.", verbose=verbose)
+            # self._print(f"{count} files removed.", verbose=verbose) # python 3+
+            self._print("{} files removed.".format(count), verbose=verbose) # python 2.7

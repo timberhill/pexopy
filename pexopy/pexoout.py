@@ -13,6 +13,8 @@ class PexoOut(object):
 
    def read(self, path):
       if not os.path.isfile(path):
-         raise FileNotFoundError(f"PEXO output not found in the specified path: {path}")
+         # errormessage = f"PEXO output not found in the specified path: {path}" # python 3+
+         errormessage = "PEXO output not found in the specified path: {}".format(path) # python 2.7
+         raise FileNotFoundError(errormessage)
 
       return genfromtxt(path, names=True)
