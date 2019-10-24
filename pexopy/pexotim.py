@@ -1,5 +1,6 @@
 from .uniquefilename import UniqueFilename
 from .settings import tim_storage
+from numpy import genfromtxt
 import numbers
 import os
 
@@ -33,18 +34,20 @@ class PexoTim(object):
    
    def _parse_tim(self, tim_path):
       # read the .tim file into an array
-      tim = []
-      with open(tim_path) as f:
-         for line in f:
-            s = line.split()
-            if len(s) == 1:
-               tim.append(s[0])
-            elif len(s) == 2:
-               tim.append(tuple(s))
-            else:
-               # errormessage = f"Error while parsing the .tim file: {tim_path}. Must only have one or two columns, 1-part or 2-part JD[UTC]." # python 3+
-               errormessage = "Error while parsing the .tim file: {}. Must only have one or two columns, 1-part or 2-part JD[UTC].".format(tim_path) # python 2.7
-               raise ValueError(errormessage)
+      # tim = []
+      # with open(tim_path) as f:
+      #    for line in f:
+      #       s = line.split()
+      #       if len(s) == 1:
+      #          tim.append(s[0])
+      #       elif len(s) == 2:
+      #          tim.append(tuple(s))
+      #       else:
+      #          # errormessage = f"Error while parsing the .tim file: {tim_path}. Must only have one or two columns, 1-part or 2-part JD[UTC]." # python 3+
+      #          errormessage = "Error while parsing the .tim file: {}. Must only have one or two columns, 1-part or 2-part JD[UTC].".format(tim_path) # python 2.7
+      #          raise ValueError(errormessage)
+
+      tim = genfromtxt(tim_path)
          
       return tim
    

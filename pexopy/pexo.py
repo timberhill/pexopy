@@ -5,7 +5,7 @@ from datetime import datetime
 from .settings import out_storage, par_storage, tim_storage
 from .pexopar import PexoPar
 from .pexotim import PexoTim
-from .pexoout import PexoOut
+from .pexoout import PexoOutput
 
 
 class Pexo(object):
@@ -206,11 +206,11 @@ class Pexo(object):
         if rc != 0:
             # errormessage = f"Underlying PEXO code return non-zero exit status {rc}." # python 3+
             errormessage = "Underlying PEXO code return non-zero exit status {}.".format(rc) # python 2.7
-            raise ChildProcessError()
+            raise ChildProcessError(errormessage)
 
         self._print("Done.", verbose=verbose)
 
-        output = PexoOut().read(self.out)
+        output = PexoOutput(self.out, utc=self.time.data)
 
         os.chdir(self.cwd)
         return output
@@ -227,3 +227,4 @@ class Pexo(object):
         if verbose:
             # self._print(f"{count} files removed.", verbose=verbose) # python 3+
             self._print("{} files removed.".format(count), verbose=verbose) # python 2.7
+    
