@@ -12,16 +12,9 @@ class Pexo(object):
     """
     A Python wrapper for PEXO - https://github.com/phillippro/pexo/
     """
-    def __init__(self):
-        self.setup()
+    def __init__(self, Rscript=None, pexodir=None, verbose=False):
+        self.setup(Rscript, pexodir, verbose)
         self.cwd = os.getcwd() # current directory
-    
-
-    def _print(self, message, verbose=True):
-        timestamp = datetime.now().strftime("%H:%M:%S.%f")[0:10]
-        if verbose:
-            # print(f"[{timestamp}] {str(message)}") # python 3+
-            print("[{}] {}".format(timestamp, str(message))) # python 2.7
 
 
     def setup(self, Rscript=None, pexodir=None, verbose=False):
@@ -37,18 +30,19 @@ class Pexo(object):
         if Rscript is None: # find Rscript
             with open(os.devnull, 'w') as FNULL:
                 rc = call(['which', 'Rscript'], stdout=FNULL)
+
             if rc == 0: # 'which' found the path
                 self.Rscript = check_output("which Rscript", shell=True).decode("ascii").strip()
             else: # 'which' returned an error
                 raise OSError("Could not find Rscript. Make sure it's installed correctly or specify the path to it in Pexo.setup(Rscript=)")
+
         else: # use the path provided by user
-            if os.path.exists(Rscript) and Rscript.endswith("Rscript"): # success
+            if os.path.exists(Rscript) and Rscript.endswith("Rscript"):
                 self.Rscript = Rscript
             else:
                 raise OSError("Specified Rscript path is not valid.")
 
-        # self._print(f"Found Rscript at {self.Rscript}", verbose=verbose) # python 3+
-        self._print("Found Rscript at {}".format(self.Rscript), verbose=verbose) # python 2.7
+        self._print("Found Rscript at {}".format(self.Rscript), verbose=verbose)
 
         # Find and validate PEXO directory path
 
@@ -66,79 +60,19 @@ class Pexo(object):
             not os.path.isfile(os.path.join(self.pexodir, "code/pexo.R")):
             raise OSError("The PEXO directory specified is not valid.")
             
-        # self._print(f"Found PEXO at    {self.pexodir}", verbose=verbose) # python 3+
-        self._print("Found PEXO at    {}".format(self.pexodir), verbose=verbose) # python 2.7
+        self._print("Found PEXO at    {}".format(self.pexodir), verbose=verbose)
 
         self.pexo_main    = os.path.join(self.pexodir, "code/pexo.R")
         self.pexodir_code = os.path.join(self.pexodir, "code")
 
 
-    def _validate_parameter(self, name, value):
-        known_commands = ["mode", "m", "component", "c", "time", "t", "par", "p", "var", "v", "out", "o", "figure", "f"]
-        if name not in known_commands:
-            # errormessage = f"Unknown parameter name: '{name}'." # python 3+
-            errormessage = "Unknown parameter name: '{}'.".format(name) # python 2.7
-            raise ValueError(errormessage)
-
-        if name in ["mode", "m"] and value is not None:
-            if value not in ["emulate", "fit"]:
-                raise ValueError("'mode' parameter should be either 'emulate' or 'fit'.")
-        
-        elif name in ["component", "c"] and value is not None:
-            if not bool(re.match("^[TtAaRr]+$", value)):
-                raise ValueError("'component' parameter should be timing (T), astrometry (A), radial velocity (R) and their combinations.")
-        
-        elif name in ["time", "t"]:
-            pass # this is validated while parsing
-        
-        elif name in ["par", "p"]:
-            pass # this is validated while parsing
-        
-        elif name in ["var", "v"] and value is not None:
-            if type(value) != str:
-                raise ValueError("'var' parameter should contain output variables.")
-        
-        elif name in ["out", "o"] and value is not None:
-            if type(value) != str:
-                raise ValueError("'out' parameter should contain a path to save the output to.")
-
-        elif name in ["figure", "f"] and value is not None:
-            if value not in ["TRUE", "FALSE"]:
-                raise ValueError("'figure' parameter should be 'FALSE' or 'TRUE'.")
-
-
-    def _construct_command(self, params):
-        command = [self.Rscript, "pexo.R"]
-        for key in params:
-            if params[key] is not None:
-                # name = f"-{key}" if len(key) == 1 else f"--{key}" # python 3+
-                name = "-"+key if len(key) == 1 else "--"+key # python 2.7
-                command.append(name)
-                command.append(str(params[key]))
-
-        return command
-
-
-    def run(self, mode="emulate", component="TAR", time=None, par=None, var=None, out=None, verbose=True):
+    def run(self, **params):
         """
         Run PEXO.
-
-        `mode`, str: PEXO mode, `emulate` or `fit` [optional; default=emulate].
-
-        `component`, str: PEXO model component: timing (T), astrometry (A), radial velocity (R) and their combinations [optional; default='TAR'].
-
-        `time`, str/array/tuple/PexoTim: Four options are possible: 1. Timing file path with epochs/times in 1-part or 2-part JD[UTC] format; 2. Array/list of 1-part or 2-part JD[UTC], with a shape (N,1) or (N,2); 3. Tuple with floats/ints like (from, to, step); 4. PexoTim object [mandatory if mode='emulate'].
-
-        `par`, str/dict/PexoPar: Parameters for models, observatory, for Keplerian/binary motion etc. The value must be a parameter file path, a dictionary with the parameters or a PexoPar object . Refer to the documentation for the full list [mandatory].
-
-        `var`, str/array_like: Output variables as an array/list or space-separated string. Refer to the documentation for the full list [optional; default=None].
-
-        `out`, str: Output file name: relative or absolute path [optional].
-
-        Returns:
-
-        <class 'numpy.ndarray'>, a table with the output variables (default or the ones specified in the `var` argument).
         """
+
+        # TODO: add custom validation
+
         if mode == "fit":
             raise NotImplementedError("Fitting mode is not yet implemented, but it's coming soon.")
 
@@ -214,7 +148,7 @@ class Pexo(object):
 
         os.chdir(self.cwd)
         return output
-    
+
 
     def clear_cache(self, verbose=True):
         count = 0
@@ -225,6 +159,51 @@ class Pexo(object):
                 count += 1
         
         if verbose:
-            # self._print(f"{count} files removed.", verbose=verbose) # python 3+
-            self._print("{} files removed.".format(count), verbose=verbose) # python 2.7
-    
+            self._print("{} files removed.".format(count), verbose=verbose)
+
+
+    def _print(self, message, verbose=True):
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[0:10]
+        if verbose:
+            print("[{}] {}".format(timestamp, str(message)))
+
+
+    def _parameter_handler(self, key):
+        handlers = [
+            dict(variations=["m", "mode"],      handler=self._handle_parameter_mode),
+            dict(variations=["i", "ins"],       handler=self._handle_parameter_mode),
+            dict(variations=["N", "Niter"],     handler=self._handle_parameter_mode),
+            dict(variations=["P", "Planet"],    handler=self._handle_parameter_mode),
+            dict(variations=["O", "orbit"],     handler=self._handle_parameter_mode),
+            dict(variations=["g", "geometry"],  handler=self._handle_parameter_mode),
+            dict(variations=["n", "ncore"],     handler=self._handle_parameter_mode),
+            dict(variations=["c", "component"], handler=self._handle_parameter_mode),
+            dict(variations=["t", "time"],      handler=self._handle_parameter_mode),
+            dict(variations=["p", "primary"],   handler=self._handle_parameter_mode),
+            dict(variations=["s", "secondary"], handler=self._handle_parameter_mode),
+            dict(variations=["M", "mass"],      handler=self._handle_parameter_mode),
+            dict(variations=["d", "data"],      handler=self._handle_parameter_mode),
+            dict(variations=["C", "companion"], handler=self._handle_parameter_mode),
+            dict(variations=["v", "var"],       handler=self._handle_parameter_mode),
+            dict(variations=["o", "out"],       handler=self._handle_parameter_mode),
+            dict(variations=["f", "figure"],    handler=self._handle_parameter_mode),
+            dict(variations=["V", "verbose"],   handler=self._handle_parameter_mode),
+        ]
+
+        for handler in handlers:
+            if key in handler["variations"]:
+                return handler["handler"]
+        
+        raise ValueError("Unknown parameter: {}".format(key))
+
+
+    def _handle_parameters(self, pairs):
+        if not isinstance(pairs, dict):
+            pairs = dict(pairs)
+        return dict([(pair[0], self._parameter_handler(key)(pairs[key])) for key in pairs])
+
+
+    def _handle_parameter_mode(self, value):
+        if value.lower() not in ["emulate", "fit"]:
+            raise ValueError("Incorrect value for the 'mode' parameter: {}".format(value))
+        return value.lower()
