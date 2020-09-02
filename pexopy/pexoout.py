@@ -1,5 +1,5 @@
 from numpy import genfromtxt, array
-from .settings import out_storage
+from .settings import temp_storage
 import os
 
 
@@ -8,7 +8,7 @@ class PexoOutput(object):
    Read PEXO output file from the specified `path`.
    """
    def __init__(self, path, utc):
-      self._storage = out_storage
+      self._storage = temp_storage
       self._read(path)
       self.utc = utc
 

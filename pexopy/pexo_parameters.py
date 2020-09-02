@@ -1,19 +1,26 @@
+import os
+import numbers
 from collections.abc import Iterable
 
+from .uniquefilename import UniqueFile
+from .settings import temp_storage
 
 class PexoParameters(object):
     """
     Pexo parameters handler.
     """
-    def __init__(self, params_dict):
+    def __init__(self, pexodir, params_dict):
+        self.pexodir = pexodir
         self._list = {}
         for p in params_dict:
             self._list[pp.key] = PexoParameter(p, params_dict[p])
+
 
     def __getattr__(self, property_name):
         if property_name not in self._list:
             return None
         return self._list[property_name].value
+
 
     def  __str__(self):
         output_string = ""
@@ -21,29 +28,39 @@ class PexoParameters(object):
             if len(key) == 1: # only use the short representations
                 output_string += "-{} {}".format(self._list[key].shortkey, self._list[key].value)
 
-    @staticmethod
-    def clear_cache():
-        raise NotImplementedError("PexoParameter.clear_cache() is not yet implemented.")
-        # from .settings import out_storage, par_storage, tim_storage
-        # count = 0
-        # for folder in [par_storage, tim_storage, out_storage]:
-        #     filenames = os.listdir(folder)
-        #     for filename in filenames:
-        #         os.remove(os.path.join(folder, filename))
-        #         count += 1
-        # if verbose:
-        #     self._print("{} files removed.".format(count), verbose=verbose)
 
+    def clear_temp(self, nuke=False):
+        """
+        Removes temporary file created by the parameter handlers (e.g. timing files that are generated when an array is provided as a --tim parameter).
+
+        nuke, bool: removes ALL files in the temp folder, whether creted by current instnce or not. Use with caution when running multiple instnces in parallel.
+        """
+        if nuke:
+            tempfiles = [
+                f for f in os.listdir(temp_storage)
+                if os.path.isfile(os.path.join(temp_storage, f)) and f.startswith(PexoParameter._temp_file_prefix)
+            ]
+        else:
+            tempfiles = [f for f in self._list[key]._temp_files for key in self._list] # flattens the lists
+        
+        for f in tempfiles:
+            path = os.path.join(temp_storage, f)
+            if os.path.isfile(path):
+                os.remove(path)
 
 
 class PexoParameter(object):
     """
     Pexo individual parameter handler, normalizes the names and values to make them appropriate as command-line arguments.
     """
-    def __init__(self, key, value):
+    _temp_file_prefix = "pexopy-temp-"
+
+    def __init__(self, key, value, pexodir):
+        self.pexodir = pexodir
         self._init_values = (key, value)
         self._normalised_value = None
         self._handler = self._parameter_handler(key)
+        self._temp_files = []
 
 
     @property
@@ -90,7 +107,7 @@ class PexoParameter(object):
         raise KeyError("Unknown parameter: {}".format(key))
 
 
-    # ERROR helpers
+    # VALIDATION helpers
     
     def _assert_type(self, value, *types):
         if not isinstance(value, types):
@@ -158,12 +175,36 @@ class PexoParameter(object):
 
 
     def _normalise_parameter_time(self, value):
-        self._assert_type(value, str)
-        ###########
-        ### TODO : handle timing file path or "from to step" format
-        ###########
-        return []
+        self._assert_type(value, Iterable, str, tuple)
+        
+        if isinstance(value, str) and os.path.isfile(value):
+            # this is a path to a timing file
+            return value
+        
+        if isinstance(value, str) and value.isnumeric() and len(value.split(" ")) == 3:
+            # this is a "from to step" format
+            return value
+        
+        if isinstance(value, tuple) and len(value) == 3:
+            # this is a (from, to, step) format
+            return " ".join(value)
+        
+        if isinstance(value, Iterable):
+            # must be a list of JDs -- create a file and return a path
+            contents = ""
+            for jd in value:
+                if isinstance(jd, numbers.Number):
+                    contents += "{}\n".format(jd)
+                elif len(jd) == 2:
+                    contents += "{} {}\n".format(jd[0], jd[1])
+                else:
+                    raise ValueError("`tim` argument should be a list of numbers, a list of tuples of numbers, or a path to a .tim file")
+            
+            path = UniqueFile(contents, prepend=PexoParameter._temp_file_prefix, append=".tim")
+            self._temp_files.ppend(path)
 
+            return path
+            
 
     def _normalise_parameter_primary(self, value):
         self._assert_type(value, str)
@@ -182,35 +223,42 @@ class PexoParameter(object):
 
 
     def _normalise_parameter_data(self, value):
-        ###########
-        ### TODO : validate actual path to data folder
-        ###########
         self._assert_type(value, str)
+        if not os.path.isdir(value):
+            raise ValueError("Path provided in the --data parameter does not exist: {}".format(value))
+
         return value
 
 
     def _normalise_parameter_companion(self, value):
-        ###########
-        ### TODO : validate actual path to companion data folder
-        ###########
         self._assert_type(value, str)
+        if not os.path.isdir(value):
+            raise ValueError("Path provided in the --companion parameter does not exist: {}".format(value))
+
         return value
 
 
     def _normalise_parameter_var(self, value):
-        self._assert_type(value, Iterable)
-        [self._assert_type(x, str) for x in value]
+        self._assert_type(value, Iterable, str)
+
         ###########
         ### TODO : validate the actual values to be one of the output parameters in PEXO
         ###########
+
+        if isinstance(value, str):
+            return value
+
+        [self._assert_type(x, str) for x in value]
         return value
 
 
     def _normalise_parameter_out(self, value):
-        ###########
-        ### TODO : validate actual output path
-        ###########
         self._assert_type(value, str)
+
+        folder, filename = os.path.split(value)
+        if not os.path.isdir(folder):
+            raise ValueError("Path provided in the --companion parameter does not exist: {}".format(value))
+
         return value
 
 

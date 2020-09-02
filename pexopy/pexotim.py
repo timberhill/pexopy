@@ -1,5 +1,5 @@
-from .uniquefilename import UniqueFilename
-from .settings import tim_storage
+from .uniquefilename import UniqueFile
+from .settings import temp_storage
 from numpy import genfromtxt
 import numbers
 import os
@@ -17,7 +17,7 @@ class PexoTim(object):
    Either way, the class instance has both the path (<PexoTim.tim_path>) and the dictionary (<PexoTim.tim>).
    """
    def __init__(self, tim):
-      self._storage = tim_storage
+      self._storage = temp_storage
 
       if isinstance(tim, type(self)):
          self.data = tim.data
@@ -33,23 +33,7 @@ class PexoTim(object):
 
    
    def _parse_tim(self, tim_path):
-      # read the .tim file into an array
-      # tim = []
-      # with open(tim_path) as f:
-      #    for line in f:
-      #       s = line.split()
-      #       if len(s) == 1:
-      #          tim.append(s[0])
-      #       elif len(s) == 2:
-      #          tim.append(tuple(s))
-      #       else:
-      #          # errormessage = f"Error while parsing the .tim file: {tim_path}. Must only have one or two columns, 1-part or 2-part JD[UTC]." # python 3+
-      #          errormessage = "Error while parsing the .tim file: {}. Must only have one or two columns, 1-part or 2-part JD[UTC].".format(tim_path) # python 2.7
-      #          raise ValueError(errormessage)
-
-      tim = genfromtxt(tim_path)
-         
-      return tim
+      return genfromtxt(tim_path)
    
 
    def _generate_tim(self, tim):
@@ -57,17 +41,15 @@ class PexoTim(object):
       try:
          for jd in tim:
             if isinstance(jd, numbers.Number):
-               # contents += f"{jd}\n" # python 3+
-               contents += "{}\n".format(jd) # python 2.7
+               contents += "{}\n".format(jd)
             elif len(jd) == 2:
-               # contents += f"{jd[0]} {jd[1]}\n" # python 3+
-               contents += "{} {}\n".format(jd[0], jd[1]) # python 2.7
+               contents += "{} {}\n".format(jd[0], jd[1])
             else:
                raise TypeError()
       except TypeError:
          raise ValueError("`tim` argument should be a list of numbers, a list of tuples of numbers, or a path to a .tim file")
    
-      filename = UniqueFilename(contents, append=".tim") # TODO : generate a unique name for this file
+      filename = UniqueFile(contents, append=".tim") # TODO : generate a unique name for this file
       path = os.path.join(self._storage, filename)
                
       with open(path, "w") as f:

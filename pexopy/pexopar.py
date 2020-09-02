@@ -1,5 +1,5 @@
-from .uniquefilename import UniqueFilename
-from .settings import par_storage
+from .uniquefilename import UniqueFile
+from .settings import temp_storage
 import numbers
 import os
 
@@ -17,7 +17,7 @@ class PexoPar(object):
    Either way, the class instance has both the path (<PexoPar.par_path>) and the dictionary (<PexoPar.par>).
    """
    def __init__(self, par={}, **args):
-      self._storage = par_storage
+      self._storage = temp_storage
       
       if isinstance(par, type(self)):
          self.data = par.data
@@ -73,7 +73,7 @@ class PexoPar(object):
          # contents += f"{key} {value}\n" # python 3+
          contents += "{} {}\n".format(key, value) # python 2.7
 
-      filename = UniqueFilename(contents, append=".par")
+      filename = UniqueFile(contents, append=".par")
       par_path = os.path.join(self._storage, filename)
       
       with open(par_path, "w") as f:
