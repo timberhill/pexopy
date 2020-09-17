@@ -1,3 +1,8 @@
-from .pexopar import PexoPar
-from .pexotim import PexoTim
+# main class
 from .pexo import Pexo
+
+# helpers
+from .parfile import ParFile
+
+# PEXO settings
+from .settings import *

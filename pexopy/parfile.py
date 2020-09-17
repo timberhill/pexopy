@@ -4,7 +4,7 @@ import numbers
 import os
 
 
-class PexoPar(object):
+class ParFile(object):
    """
    PEXOpy .par file handler.
    The constructor's `par` argument is either a dictionary with the parameters, or a path to a file with the parameters.
@@ -18,6 +18,7 @@ class PexoPar(object):
    """
    def __init__(self, par={}, **args):
       self._storage = temp_storage
+      self.temporary = False
       
       if isinstance(par, type(self)):
          self.data = par.data
@@ -26,8 +27,7 @@ class PexoPar(object):
          self.data = self._parse_par(par)
          self.path = par
       elif isinstance(par, dict): # this is a dictionary with the parameters
-         # par = {*par, *args} # python3+
-         par.update(args) # python2.7
+         par.update(args)
          self.data = par
          self.path = self._generate_par(par)
       else:
@@ -36,8 +36,7 @@ class PexoPar(object):
 
    def _validate_parameter(self, name, value, error=""):
       if name not in self._par: # unknown parameter
-         # errormessage = f"{error}Unknown parameter '{name}'." # python 3+
-         errormessage = "{}Unknown parameter '{}'.".format(error, name) # python 2.7
+         errormessage = "{}Unknown parameter '{}'.".format(error, name)
          raise KeyError(errormessage)
 
       options = self._par[name]["options"]
@@ -52,17 +51,16 @@ class PexoPar(object):
          value = float(value)
 
       if options is not None and value not in options: # there are some set options for this parameter
-         # errormessage = f"{error}The value of '{name}' should be one of {options}"
          errormessage = "{}The value of '{}' should be one of {}".format(error, name, options)
          raise ValueError(errormessage)
-
+      
       if not isinstance(value, param_type):
-         # errormessage = f"{error}The value of '{name}' should be of type {param_type}" # python 3+
-         errormessage = "{}The value of '{}' should be of type {}".format(error, name, param_type) # python 2.7
+         errormessage = "{}The value of '{}' should be of type {}".format(error, name, param_type)
          raise ValueError(errormessage)
 
 
-   def _generate_par(self, par_dict):      
+   def _generate_par(self, par_dict):
+      self.temporary = True
       contents = ""
       for key in par_dict:
          value = par_dict[key]
@@ -70,8 +68,7 @@ class PexoPar(object):
 
          # handle the bool-to-str
          value = str(value).upper() if isinstance(value, bool) else value
-         # contents += f"{key} {value}\n" # python 3+
-         contents += "{} {}\n".format(key, value) # python 2.7
+         contents += "{} {}\n".format(key, value)
 
       filename = UniqueFile(contents, append=".par")
       par_path = os.path.join(self._storage, filename)
@@ -94,12 +91,10 @@ class PexoPar(object):
          for line in f:
                s = line.split()
                if len(s) != 2:
-                  # errormessage = f"Error while parsing the .par file: {par_path}. Must only have two columns, i.e. 'name value', {len(s)} columns encountered." # python 3+
                   errormessage = "Error while parsing the .par file: {par_path}. Must only have two columns, i.e. 'name value', {} columns encountered.".format(par_path, len(s))
                   raise ValueError()
 
-               # self._validate_parameter(s[0], s[1], error=f"Error while parsing the .par file: {par_path}. ") # python 3+
-               self._validate_parameter(s[0], s[1], error="Error while parsing the .par file: {}. ".format(par_path)) # python 2.7
+               self._validate_parameter(s[0], s[1], error="Error while parsing the .par file: {}. ".format(par_path))
                
                # didn't raise an error, all must be good with this parameter
                par[s[0]] = s[1]
@@ -113,22 +108,14 @@ class PexoPar(object):
       """
       for key in self._par:
          t = str(self._par["type"])
-         # o = "" if self._par["options"] is None else f", options: {self._par['options']}" # python 3+
-         o = "" if self._par["options"] is None else ", options: {}".format(self._par['options']) # python 2.7
-         # print(f"{key}, {t}{o}") # python 3+
-         print("{}, {}{}".format(key, t, o)) # python 2.7
+         o = "" if self._par["options"] is None else ", options: {}".format(self._par['options'])
+         print("{}, {}{}".format(key, t, o))
          
          d = self._par["description"]
-         # print(f"\t{d}\n") # python 3+
-         print("\t{}\n".format(d)) # python 2.7
+         print("\t{}\n".format(d))
 
 
    _par = {
-      "name" : {
-         "options"    : None,
-         "description": "Name of the target, first five characters of parameter file name, any string",
-         "type"       : str
-      },
       "RefType" : {
          "options"    : ["none", "refro", "refco", "refcoq"],
          "description": "Computation method for atmospheric refraction",

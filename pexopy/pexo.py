@@ -4,7 +4,7 @@ from subprocess import Popen, PIPE, call, check_output
 from datetime import datetime
 from .pexopar import PexoPar
 from .pexotim import PexoTim
-from .pexoout import PexoOutput
+from .pexoout import EmulationOutput
 from .pexo_parameter import PexoParameters
 
 
@@ -91,7 +91,7 @@ class Pexo(object):
 
         self._print("Done.", verbose=verbose)
 
-        output = PexoOutput(self.out, utc=self.time.data)
+        output = EmulationOutput(self.out, utc=self.time.data)
         parameters.clear_cache()
 
         os.chdir(self.cwd)
