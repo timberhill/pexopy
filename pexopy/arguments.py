@@ -11,11 +11,26 @@ class PexoArguments(object):
     """
     Pexo arguments handler.
     """
-    def __init__(self, pexodir, params_dict):
-        self.pexodir = pexodir
+    def __init__(self, args_dict):
         self._list = {}
-        for p in params_dict:
-            self._list[pp.key] = Argument(p, params_dict[p])
+        for key in args_dict:
+            argument = Argument(key, args_dict[key])
+            self._list[argument.key] = argument
+            self._list[argument.shortkey] = argument
+        
+        self._ensure_output_specified()
+    
+
+    def _ensure_output_specified(self):
+        if "o" not in self._list and "out" not in self._list:
+            append = ".txt"
+            if self._list["mode"].value == "fit":
+                append = ".Robj"
+
+            filename = UniqueFile(str(self), append=append, create=False)
+            argument = Argument("out", filename)
+            self._list[argument.key] = argument
+            self._list[argument.shortkey] = argument
 
 
     def __getattr__(self, property_name):
@@ -28,7 +43,9 @@ class PexoArguments(object):
         output_string = ""
         for key in self._list:
             if len(key) == 1: # only use the short representations
-                output_string += "-{} {}".format(self._list[key].shortkey, self._list[key].value)
+                output_string += " -{} {}".format(self._list[key].shortkey, self._list[key].value)
+                
+        return output_string
 
 
     def clear_temp(self, nuke=False):
@@ -43,8 +60,12 @@ class PexoArguments(object):
                 if os.path.isfile(os.path.join(temp_storage, f)) and f.startswith(Argument._temp_file_prefix)
             ]
         else:
-            tempfiles = [f for f in self._list[key]._temp_files for key in self._list] # flattens the lists
-        
+            tempfiles = []
+            args = [self._list[key] for key in self._list]
+            for key in self._list:
+                for tempfile in self._list[key]._temp_files:
+                    tempfiles.append(tempfile)
+
         for f in tempfiles:
             path = os.path.join(temp_storage, f)
             if os.path.isfile(path):
@@ -57,8 +78,7 @@ class Argument(object):
     """
     _temp_file_prefix = "pexopy-temp-"
 
-    def __init__(self, key, value, pexodir):
-        self.pexodir = pexodir
+    def __init__(self, key, value):
         self._init_values = (key, value)
         self._normalised_value = None
         self._handler = self._argument_handler(key)
@@ -79,6 +99,8 @@ class Argument(object):
             self._normalised_value = self._handler["handler"](self._init_values[1])
         return self._normalised_value
 
+
+    # LIST OF ARGUMENTS
 
     def _argument_handler(self, key):
         handlers = [
@@ -224,7 +246,7 @@ class Argument(object):
     def _normalise_argument_data(self, value):
         self._assert_type(value, str)
         if not os.path.isdir(value):
-            raise FileNotFoundError("Path provided in the --data argument does not exist: {}".format(value))
+            raise NotADirectoryError("Path provided in the --data argument does not exist: {}".format(value))
 
         return value
 
@@ -232,7 +254,7 @@ class Argument(object):
     def _normalise_argument_companion(self, value):
         self._assert_type(value, str)
         if not os.path.isdir(value):
-            raise FileNotFoundError("Path provided in the --companion argument does not exist: {}".format(value))
+            raise NotADirectoryError("Path provided in the --companion argument does not exist: {}".format(value))
 
         return value
 
@@ -256,7 +278,7 @@ class Argument(object):
 
         folder, filename = os.path.split(value)
         if not os.path.isdir(folder):
-            raise FileNotFoundError("Path provided in the --companion argument does not exist: {}".format(value))
+            raise FileNotFoundError("Path provided in the --out argument does not exist: {}".format(value))
 
         return value
 

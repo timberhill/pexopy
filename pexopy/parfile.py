@@ -14,21 +14,21 @@ class ParFile(object):
    If it's a dictionary, it's validated and saved to a file.
    You can also just add parameters as function arguments.
 
-   Either way, the class instance has both the path (<PexoPar.par_path>) and the dictionary (<PexoPar.par>).
+   Either way, the class instance has both the path (<ParFile.path>) and the dictionary (<ParFile.contents>).
    """
    def __init__(self, par={}, **args):
       self._storage = temp_storage
       self.temporary = False
       
       if isinstance(par, type(self)):
-         self.data = par.data
+         self.contents = par.contents
          self.path = par.path
       elif isinstance(par, str): # this is a path to a file
-         self.data = self._parse_par(par)
+         self.contents = self._parse_par(par)
          self.path = par
       elif isinstance(par, dict): # this is a dictionary with the parameters
          par.update(args)
-         self.data = par
+         self.contents = par
          self.path = self._generate_par(par)
       else:
          raise ValueError("`par` argument is either a dictionary with the parameters, or a path to a file with the parameters.")
@@ -81,8 +81,7 @@ class ParFile(object):
 
    def _parse_par(self, par_path):
       if not os.path.isfile(par_path):
-         # errormessage = f"File '{par_path}' does not exist." # python 3+
-         errormessage = "File '{}' does not exist.".format(par_path) # python 2.7
+         errormessage = "File '{}' does not exist.".format(par_path)
          raise IOError(errormessage)
 
       # read the .par file into a dictionary

@@ -2,17 +2,16 @@ import os
 import re
 from subprocess import Popen, PIPE, call, check_output
 from datetime import datetime
-from .pexopar import PexoPar
-from .pexotim import PexoTim
-from .pexoout import EmulationOutput
-from .pexo_parameter import PexoParameters
+from .output import EmulationOutput, FitOutput
+from .arguments import PexoArguments
 
 
 class Pexo(object):
     """
     A Python wrapper for PEXO - https://github.com/phillippro/pexo/
     """
-    def __init__(self, Rscript=None, pexodir=None, verbose=False):
+    def __init__(self, Rscript=None, pexodir=None, verbose=True):
+        self.verbose = verbose
         self.setup(Rscript, pexodir, verbose)
 
 
@@ -44,7 +43,7 @@ class Pexo(object):
             else:
                 raise OSError("Specified Rscript path is not valid.")
 
-        self._print("Found Rscript at {}".format(self.Rscript), verbose=verbose)
+        self._print("Found Rscript at {}".format(self.Rscript))
 
         # Find and validate PEXO directory path
 
@@ -62,43 +61,48 @@ class Pexo(object):
             not os.path.isfile(os.path.join(self.pexodir, "code/pexo.R")):
             raise OSError("The PEXO directory specified is not valid.")
             
-        self._print("Found PEXO at    {}".format(self.pexodir), verbose=self.verbose)
+        self._print("Found PEXO at    {}".format(self.pexodir))
 
         self.pexo_main    = os.path.join(self.pexodir, "code/pexo.R")
         self.pexodir_code = os.path.join(self.pexodir, "code")
 
 
-    def run(self, **params):
+    def run(self, **args):
         """
         Run PEXO.
+
+        Specify PEXO arguments in this function (same naming convention, see documentation).
         """
-        parameters = PexoParameters(params)
-        command = "{} pexo.R {}".format(self.Rscript, str(parameters))
+        # validate & normalise arguments
+        arguments = PexoArguments(args)
+        command = "{} pexo.R {}".format(self.Rscript, str(arguments))
+        self._print("Running PEXO with:\n$ " + "".join(command) + "\n")
 
         # RUN PEXO
-        self._print("Running PEXO with:\n$ " + " ".join(command) + "\n", verbose=verbose)
-        os.chdir(os.path.join(self.pexodir, "code")) # go to pexo code directory
-
+        code_dir = os.path.join(self.pexodir, "code")
         if self.verbose:
-            rc = call(command)
+            rc = call(command, cwd=code_dir, shell=True)
         else:
             with open(os.devnull, "w") as FNULL:
-                rc = call(command, stdout=FNULL, stderr=FNULL)
+                rc = call(command, cwd=code_dir, shell=True, stdout=FNULL, stderr=FNULL)
 
         if rc != 0:
             errormessage = "Underlying PEXO code return non-zero exit status {}.".format(rc)
             raise ChildProcessError(errormessage)
 
-        self._print("Done.", verbose=verbose)
+        self._print("Done.")
 
-        output = EmulationOutput(self.out, utc=self.time.data)
-        parameters.clear_cache()
+        if arguments.mode == "fit":
+            output = FitOutput(arguments.out)
+        else:
+            output = EmulationOutput(arguments.out)
 
-        os.chdir(self.cwd)
+        # clean up temp files if any and come back to the original directory
+        arguments.clear_temp()
         return output
 
 
-    def _print(self, message, verbose=True):
+    def _print(self, message):
         timestamp = datetime.now().strftime("%H:%M:%S.%f")[0:10]
-        if verbose:
+        if self.verbose:
             print("[{}] {}".format(timestamp, str(message)))

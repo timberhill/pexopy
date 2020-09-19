@@ -5,7 +5,8 @@ def _ensurePathExists(folder):
         os.makedirs(folder)
 
 module_path = os.path.dirname(os.path.abspath(__file__))
-temp_storage = os.path.relpath(os.path.join(module_path, "pexopy-temp"), ".") # temporary file storage path
+temp_storage = os.path.normpath(os.path.join(module_path, "../tmp")) # temporary file storage path
+
 _ensurePathExists(temp_storage)
 
 if __name__ == "__main__":
