@@ -202,9 +202,9 @@ class Argument(object):
             # this is a path to a timing file
             return value
         
-        if isinstance(value, str) and value.isnumeric() and len(value.split(" ")) == 3:
+        if isinstance(value, str) and value.replace(" ", "").isnumeric() and len(value.split(" ")) == 3:
             # this is a "from to step" format
-            return value
+            return f"\"{value}\""
         
         if isinstance(value, tuple) and len(value) == 3:
             # this is a (from, to, step) format

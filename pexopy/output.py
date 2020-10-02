@@ -16,7 +16,7 @@ class EmulationOutput(object):
             raise FileNotFoundError(errormessage)
         
         self.path = path
-        self.contents = genfromtxt(path, names=True)
+        self.data = genfromtxt(path, names=True)
 
 
     def saveto(self, path):
@@ -35,7 +35,7 @@ class FitOutput(object):
             raise FileNotFoundError(errormessage)
 
         self.path = path
-        self.contents = r.load(path)
+        self.data = r.load(path)
 
 
     def saveto(self, path):
