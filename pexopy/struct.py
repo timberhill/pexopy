@@ -27,3 +27,7 @@ class Struct(object):
 
     def __setattr__(self, name, value):
         self.__dict__[name] = value
+
+    @property
+    def dictionary(self):
+        return self.__dict__

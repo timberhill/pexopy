@@ -1,5 +1,6 @@
-from numpy import genfromtxt, array
+from numpy import genfromtxt, array, asarray
 from rpy2.robjects import r
+from rpy2.rinterface import NARealType
 from shutil import move
 import os
 
@@ -16,7 +17,7 @@ class EmulationOutput(object):
             raise FileNotFoundError(errormessage)
         
         self.path = path
-        self.data = genfromtxt(path, names=True)
+        self.contents = genfromtxt(path, names=True)
 
 
     def saveto(self, path):
@@ -35,7 +36,7 @@ class FitOutput(object):
             raise FileNotFoundError(errormessage)
 
         self.path = path
-        self.data = r.load(path)
+        self.contents = r.load(path)
 
 
     def saveto(self, path):
@@ -45,24 +46,42 @@ class FitOutput(object):
 
     @property
     def parstat(self):
-        parstat  = array(r['ParStat']).T
-        colnames = r.colnames(parstat)
+        obj  = array(r['ParStat']).T
+        colnames = r.colnames(obj)
         properties = ["xopt", "x1per", "x99per", "x10per", "x90per", "xminus", "xplus", "mode", "mean", "sd", "skewness", "kurtosis"]
-        
-        parameter_values = [dict(zip(properties, parstat[i])) for i in range(len(colnames))]
+
+        parameter_values = [dict(zip(properties, obj[i])) for i in range(len(colnames))]
         return Struct(dict(zip(colnames, parameter_values)))
 
 
     @property
     def mc(self):
-        raise NotImplementedError
+        r_obj     = r['mc']
+        colnames  = r.colnames(r_obj)
+        obj       = array(r_obj).T
+
+        return Struct(dict(zip(colnames, obj)))
 
 
     @property
     def data(self):
-        raise NotImplementedError
+        def _fix_nones_list(column_list):
+            return [None if isinstance(x, NARealType) else x for x in column_list]
+
+        r_obj     = r['Data']
+        colnames  = r.colnames(r_obj)
+        table = [_fix_nones_list(x) for x in r_obj]
+
+        return Struct(dict(zip(colnames, table)))
 
 
     @property
     def model(self):
-        raise NotImplementedError
+        def _fix_nones_list(column_list):
+            return [None if isinstance(x, NARealType) else x for x in column_list]
+
+        r_obj     = r['model']
+        colnames  = r.colnames(r_obj)
+        table = [_fix_nones_list(x) for x in r_obj]
+
+        return Struct(dict(zip(colnames, table)))

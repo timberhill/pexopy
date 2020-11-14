@@ -2,7 +2,7 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import unittest
-from pexopy import Pexo
+from pexopy import Pexo, FitOutput, EmulationOutput
 
 class PexopyArgumentsTest(unittest.TestCase):
 
@@ -14,7 +14,7 @@ class PexopyArgumentsTest(unittest.TestCase):
             ins="HARPS",
             time="2450000 2453000 10"
         )
-        self.assertIsNotNone(output)
+        self.assertIsInstance(output, EmulationOutput)
 
 
     def test_fit_1(self):
@@ -25,9 +25,8 @@ class PexopyArgumentsTest(unittest.TestCase):
             Niter=100,
             ncore=4
         )
-        self.assertIsNotNone(output)
+        self.assertIsInstance(output, FitOutput)
 
 
 if __name__ == "__main__":
-    exit()
     unittest.main()
