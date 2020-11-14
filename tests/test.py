@@ -4,6 +4,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import unittest
 from pexopy import Pexo, FitOutput, EmulationOutput
 
+
 class PexopyArgumentsTest(unittest.TestCase):
 
     def test_emulate_1(self):

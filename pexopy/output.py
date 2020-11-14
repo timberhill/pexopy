@@ -59,6 +59,7 @@ class FitOutput(object):
         r_obj     = r['mc']
         colnames  = r.colnames(r_obj)
         obj       = array(r_obj).T
+        print(colnames)
 
         return Struct(dict(zip(colnames, obj)))
 
@@ -70,6 +71,7 @@ class FitOutput(object):
 
         r_obj     = r['Data']
         colnames  = r.colnames(r_obj)
+        print(colnames)
         table = [_fix_nones_list(x) for x in r_obj]
 
         return Struct(dict(zip(colnames, table)))
@@ -82,6 +84,7 @@ class FitOutput(object):
 
         r_obj     = r['model']
         colnames  = r.colnames(r_obj)
+        print(colnames)
         table = [_fix_nones_list(x) for x in r_obj]
 
         return Struct(dict(zip(colnames, table)))

@@ -19,7 +19,7 @@ class PexoArguments(object):
             self._list[argument.shortkey] = argument
         
         self._ensure_output_specified()
-    
+
 
     def _ensure_output_specified(self):
         if "o" not in self._list and "out" not in self._list:
@@ -44,7 +44,7 @@ class PexoArguments(object):
         for key in self._list:
             if len(key) == 1: # only use the short representations
                 output_string += " -{} {}".format(self._list[key].shortkey, self._list[key].value)
-                
+
         return output_string
 
 
@@ -92,7 +92,7 @@ class Argument(object):
     @property
     def key(self):
         return self._handler["variations"][1]
-    
+
     @property
     def value(self):
         if self._normalised_value is None:
@@ -135,16 +135,16 @@ class Argument(object):
     def _assert_type(self, value, *types):
         if not isinstance(value, types):
             raise ValueError(self._value_error_message(value))
-    
+
     def _assert_positive(self, value, zero_allowed=False):
         if value < 0 or (zero_allowed==False and value == 0):
             raise ValueError(self._value_error_message(value))
-    
+
     def _assert_in_set(self, value, *allowed):
         if value not in allowed:
             raise ValueError(self._value_error_message(value))
 
-    def _value_error_message(self, key, value):
+    def _value_error_message(self, value):
         return "Incorrect value for the '{}' argument: {}".format(self.key, value)
 
 
@@ -197,19 +197,19 @@ class Argument(object):
 
     def _normalise_argument_time(self, value):
         self._assert_type(value, Iterable, str, tuple)
-        
+
         if isinstance(value, str) and os.path.isfile(value):
             # this is a path to a timing file
             return value
-        
+
         if isinstance(value, str) and value.replace(" ", "").isnumeric() and len(value.split(" ")) == 3:
             # this is a "from to step" format
             return f"\"{value}\""
-        
+
         if isinstance(value, tuple) and len(value) == 3:
             # this is a (from, to, step) format
             return " ".join(value)
-        
+
         if isinstance(value, Iterable):
             # must be a list of JDs -- create a file and return a path
             contents = ""
@@ -220,7 +220,7 @@ class Argument(object):
                     contents += "{} {}\n".format(jd[0], jd[1])
                 else:
                     raise ValueError("`tim` argument should be a list of numbers, a list of tuples of numbers, or a path to a .tim file")
-            
+
             path = UniqueFile(contents, prepend=Argument._temp_file_prefix, append=".tim")
             self._temp_files.append(path)
 
@@ -252,10 +252,8 @@ class Argument(object):
 
 
     def _normalise_argument_companion(self, value):
-        self._assert_type(value, str)
-        if not os.path.isdir(value):
-            raise NotADirectoryError("Path provided in the --companion argument does not exist: {}".format(value))
-
+        self._assert_type(value, int)
+        self._assert_positive(value, zero_allowed=True)
         return value
 
 
@@ -276,6 +274,7 @@ class Argument(object):
     def _normalise_argument_out(self, value):
         self._assert_type(value, str)
 
+        value = os.path.abspath(value)
         folder, filename = os.path.split(value)
         if not os.path.isdir(folder):
             raise FileNotFoundError("Path provided in the --out argument does not exist: {}".format(value))

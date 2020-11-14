@@ -1,18 +1,21 @@
+# PEXOpy v0.2 Beta
+
 A python wrapper for [PEXO](https://github.com/phillippro/pexo) software.
 
 **NOTE** : this is an early alpha and is under development.
 
-# Requirements
+## Requirements
 
-- Python 2.7 or higher
-- NumPy
+- Python 3.6 or higher. It should work with 2.7, but it is not recommended.
+- numpy
+- rpy2
 - [PEXO](https://github.com/phillippro/pexo) and its dependencies, see [documentation](http://rpubs.com/Fabo/pexo) for installation guidance.
 
-# Installation
+## Installation
 
 Install the dependencies and set an environment variable `$PEXODIR` to a path to the PEXO repository. Add `export PEXODIR=/example/path/to/pexo` to your `~/.bashrc` or `~/.bash_profile` if you’re using bash, or `setenv PEXODIR /example/path/to/pexo`to `~/.tcshrc` if you’re using tcsh.
 
-## from this repository
+### from this repository
 
 ```sh
 git clone https://github.com/timberhill/pexopy.git
@@ -26,169 +29,77 @@ or
 pip install git+https://github.com/timberhill/pexopy.git -U
 ```
 
-## uninstall
+### uninstall
 
 ```sh
 pip uninstall pexopy
 ```
 
-# Usage
+## Usage
 
-`Pexo` object takes the same parameters as PEXO software, except in a pythonic way.
+PEXO needs to run in a pexo environment (see [readme](https://github.com/phillippro/pexo#local-installation)).
 
-To run PEXO, call function `Pexo().run()` and specify the parameters.
+The package contains a python class `Pexo` that is used to run PEXO.
+Optional arguments:
 
-## Using input file paths
+`Rscript`: path to Rscript executable (uses output of `which Rscript` if None)
 
-The files in this example are from [PEXO repository](https://github.com/phillippro/pexo/tree/master/input).
+`pexodir`: path to PEXO directory (uses `PEXODIR` environment variable if None)
+
+`verbose`: whether to show the PEXO stdout (default: True)
+
+The function to start PEXO is `Pexo().run()`. The arguments are consistent with the command line arguments of PEXO (see [documentation](http://rpubs.com/Fabo/pexo2)).
+
+## Examples
+
+### Emulation
+
+```python
+from pexopy import Pexo
+
+output = Pexo(verbose=False).run(
+    mode="emulate",
+    primary="HD128621",
+    ins="HARPS",
+    time="2450000 2453000 10"
+)
+```
+
+Here, `output` is a type of `EmulationOutput`:
+
+`output.contents` contains a `numpy.ndarray` with the output results
+
+`output.path` is a PEXO output file path
+
+`output.saveto(path=...)` saves the output table to the specified path
+
+### Fitting
 
 ```python
 from pexopy import Pexo
 
-pexo_output = Pexo().run(
-    mode="emulate",
-    component="TAR",
-    time= "../pexo/input/gaia80yrby10day.tim",
-    par="../pexo/input/ACAgaia.par" # Alpha Centauri input file
-)
-
-print(type(pexo_output))
-print(pexo_output.dtype.names)
-print(pexo_output)
-```
-
-Output:
-
-```plain
-<class 'numpy.ndarray'>
-
-('BJDtcb1', 'BJDtcb2', 'BJDtdb1', 'BJDtdb2')
-
-[(2442596., 0.00380966, 2442596., 0.00381816)
- (2443192., 0.32709   , 2443192., 0.32708926)
- (2443788., 0.65067419, 2443788., 0.6506642 )
- ...
- (2471816., 0.00452725, 2471816., 0.00408269)]
-```
-
-See output column description in [PEXO documentation](http://rpubs.com/Fabo/pexo).
-
-## Input files as dictionaries
-
-```python
-from pexopy import Pexo
-from numpy import arange
-
-tauCeti_par = {
-    "name"          : "TauCeti",
-    "EopType"       : "2000B",
-    "RefType"       : "none",
-    "TaiType"       : "instant",
-    "TtType"        : "TAI",
-    "unit"          : "TDB",
-    "DE"            : "430",
-    "TtTdbMethod"   : "eph",
-    "SBscaling"     : False,
-    "PlanetShapiro" : True,
-    "CompareT2"     : True,
-    "LenRVmethod"   : "T2",
-    "RVmethod"      : "analytical",
-    "g"             : 1,
-    "ellipsoid"     : "GRS80",
-    "observatory"   : "CTIO",
-    "xtel"          : 1814985.3,
-    "ytel"          : -5213916.8,
-    "ztel"          : -3187738.1,
-    "tdk"           : 278,
-    "pmb"           : 1013.25,
-    "rh"            : 0.1,
-    "wl"            : 0.5,
-    "tlr"           : 0.0065,
-    "epoch"         : 2448349.06250,
-    "mT"            : 0.783,
-    "mC"            : 0,
-    "ra"            : 026.02136459,
-    "dec"           : -15.93955572,
-    "plx"           : 273.96,
-    "pmra"          : -1721.05,
-    "pmdec"         : 854.16,
-    "rv"            : -16.68
-}
-
-pexo_output = Pexo().run(
-    mode="emulate",
-    component="TAR",
-    time=arange(2442000.5, 2443000.5, 10),
-    par=tauCeti_par,
-    out="output.txt" # output file with `pexo_output` contents will be saved to the currect directory
+output = Pexo(verbose=False).run(
+    primary="HD239960",
+    mode="fit",
+    N=100,
+    ncore=4,
+    C=1,
+    o="HD239960-fit.Robj"
 )
 ```
 
-## Using `PexoPar` and `PexoTim` objects
+Here, `output` is a type of `FitOutput`:
 
-```python
-from pexopy import Pexo, PexoPar, PexoTim
-import numpy as np
+`output.contents` contains a `rpy2` object with all the fitting results
 
-tauCeti_par = PexoPar(
-    name="TauCeti",
-    EopType="2000B",
-    RefType="none",
-    TaiType="instant",
-    TtType="TAI",
-    unit="TDB",
-    DE="430",
-    TtTdbMethod="eph",
-    SBscaling=False,
-    PlanetShapiro=True,
-    CompareT2=True,
-    LenRVmethod="T2",
-    RVmethod="analytical",
-    g=1,
-    ellipsoid="GRS80",
-    observatory="CTIO",
-    xtel=1814985.3,
-    ytel=-5213916.8,
-    ztel=-3187738.1,
-    tdk=278,
-    pmb=1013.25,
-    rh=0.1,
-    wl=0.5,
-    tlr=0.0065,
-    epoch=2448349.06250,
-    mT=0.783,
-    mC=0,
-    ra=026.02136459,
-    dec=-15.93955572,
-    plx=273.96,
-    pmra=-1721.05,
-    pmdec=854.16,
-    rv=-16.68
-)
-# or, if you have a file, tauCeti_par = PexoPar("../pexo/input/TC_Fig11b.par")
+`output.path` is a PEXO output file path
 
-tim = PexoTim(np.arange(2442000.5, 2443000.5, 10))
+`output.saveto(path=...)` saves the output `Robj` file to the specified path
 
-pexo_output = Pexo().run(
-    mode="emulate",
-    component="TAR",
-    time=tim,
-    par=tauCeti_par,
-    out="output.txt" # output file with `pexo_output` contents will be saved to the currect directory
-)
-```
+`output.parstat` contains the fit parameters, their values, and some key statistical parameters of the MCMC fit, e.g. `output.raOff.mean` and `output.raOff.sd` being the mean value and standard deviation of the right ascension offset
 
-## `setup()`
+`output.mc` contains the markov chains of each of the parameters.
 
-`Pexo().setup()` is needed is you want to specify custom paths to you Rscript installation (determined from `which Rscript` otherwise) or PEXO repository (uses `$PEXODIR` environment variable otherwise):
+`output.data` is a table of data points with columns `utc`,`V1`,`eV1`,`V2`,`eV2`,`star`,`type`,`instrument`,`wavelength`
 
-```python
-from pexopy import Pexo
-pexo = Pexo()
-pexo.setup(Rscript="/path/to/Rscript", pexodir="/path/to/pexo")
-# now you can run it
-```
-
-## `clear_cache()`
-
-As `pexopy` creates temporary input and output files, you might want to clear them with `Pexo().clear_cache()`.
+`output.model` is the same table, but with the fitted model values
